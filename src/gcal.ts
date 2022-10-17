@@ -1,18 +1,18 @@
-import { authenticate } from '@google-cloud/local-auth';
-import fs from 'fs/promises';
-import { OAuth2Client } from 'google-auth-library';
-import { JSONClient } from 'google-auth-library/build/src/auth/googleauth';
-import path from 'path';
-import process from 'process';
-import { calendar_v3 , google } from 'googleapis';
+import { authenticate } from "@google-cloud/local-auth";
+import fs from "fs/promises";
+import { OAuth2Client } from "google-auth-library";
+import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
+import path from "path";
+import process from "process";
+import { calendar_v3, google } from "googleapis";
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-const TOKEN_PATH = path.join(process.cwd(), 'secrets/token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'secrets/credentials.json');
+const TOKEN_PATH = path.join(process.cwd(), "secrets/token.json");
+const CREDENTIALS_PATH = path.join(process.cwd(), "secrets/credentials.json");
 
 /**
  * Reads previously authorized credentials from the save file.
@@ -21,8 +21,8 @@ const CREDENTIALS_PATH = path.join(process.cwd(), 'secrets/credentials.json');
  */
 async function loadSavedCredentialsIfExist() {
   try {
-    const content = await fs.readFile(TOKEN_PATH, { encoding: "utf8"});
-    const credentials = JSON.parse(content );
+    const content = await fs.readFile(TOKEN_PATH, { encoding: "utf8" });
+    const credentials = JSON.parse(content);
     return google.auth.fromJSON(credentials);
   } catch (err) {
     return null;
@@ -36,15 +36,19 @@ async function loadSavedCredentialsIfExist() {
  * @return {Promise<void>}
  */
 async function saveCredentials(client: OAuth2Client) {
-  const content = await fs.readFile(CREDENTIALS_PATH, {encoding: "utf-8"});
+  const content = await fs.readFile(CREDENTIALS_PATH, { encoding: "utf-8" });
   const keys = JSON.parse(content);
   const key = keys.installed || keys.web;
-  const payload = JSON.stringify({
-    type: 'authorized_user',
-    client_id: key.client_id,
-    client_secret: key.client_secret,
-    refresh_token: client.credentials.refresh_token,
-  }, null, 2);
+  const payload = JSON.stringify(
+    {
+      type: "authorized_user",
+      client_id: key.client_id,
+      client_secret: key.client_secret,
+      refresh_token: client.credentials.refresh_token,
+    },
+    null,
+    2
+  );
   await fs.writeFile(TOKEN_PATH, payload);
 }
 
@@ -52,8 +56,8 @@ async function saveCredentials(client: OAuth2Client) {
  * Load or request or authorization to call APIs.
  *
  */
-type SomeClient = JSONClient | OAuth2Client
-export async function authorize() : Promise<SomeClient> {
+type SomeClient = JSONClient | OAuth2Client;
+export async function authorize(): Promise<SomeClient> {
   let jsonClient = await loadSavedCredentialsIfExist();
   if (jsonClient) {
     return jsonClient;
@@ -69,10 +73,10 @@ export async function authorize() : Promise<SomeClient> {
 }
 
 export async function newCalendarClient(auth?: SomeClient) {
-    if (!auth) {
-        auth = await authorize();
-    }
-    return google.calendar({version: 'v3', auth});
+  if (!auth) {
+    auth = await authorize();
+  }
+  return google.calendar({ version: "v3", auth });
 }
 
 /**
@@ -81,19 +85,19 @@ export async function newCalendarClient(auth?: SomeClient) {
  */
 export async function listEvents(calendar: calendar_v3.Calendar) {
   const res = await calendar.events.list({
-    calendarId: 'primary',
+    calendarId: "primary",
     timeMin: new Date().toISOString(),
     maxResults: 10,
     singleEvents: true,
-    orderBy: 'startTime',
+    orderBy: "startTime",
   });
 
   const events = res.data.items;
   if (!events || events.length === 0) {
-    console.log('No upcoming events found.');
+    console.log("No upcoming events found.");
     return;
   }
-  console.log('Upcoming 10 events:');
+  console.log("Upcoming 10 events:");
   events.map((event) => {
     const start = event.start?.dateTime || event.start?.date;
     console.log(`${start} - ${event.summary}`);
