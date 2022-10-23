@@ -3,6 +3,11 @@ import { DateTime } from "luxon";
 import { Logger } from "tslog";
 const log = new Logger();
 
+export type InviteResponse =
+  | "needsAction"
+  | "declined"
+  | "tentative"
+  | "accepted";
 export class WrappedEvent {
   public readonly original: calendar_v3.Schema$Event;
   public readonly start: DateTime;
@@ -73,5 +78,31 @@ export class WrappedEvent {
       end = eod;
     }
     return end.diff(start); // .as("minutes") / 60.0
+  }
+
+  get isOutOfOffice() {
+    return this.original.eventType === "outOfOffice";
+  }
+
+  get myResponse(): InviteResponse {
+    let me = this.original.attendees?.find((a) => a.self);
+    return (me?.responseStatus as InviteResponse) || undefined;
+  }
+
+  get isPersonalWithoutOthers(): boolean {
+    return !!(
+      (this.original.attendees || []).length <= 1 && this.original.creator?.self
+    );
+  }
+
+  get isOneOnOne(): boolean {
+    if (!this.original.creator || !this.original.attendees) {
+      return false;
+    }
+    let creator = this.original.creator?.email;
+    return (
+      this.original.attendees.length == 2 &&
+      this.original.attendees.some((a) => a.email === creator)
+    );
   }
 }

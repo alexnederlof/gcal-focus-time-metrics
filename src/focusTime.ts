@@ -23,6 +23,7 @@ export type FocusResult = {
   inOfficeTime: number;
   inMeeting: number;
   inRecurringMeeting: number;
+  inOneOnOne: number;
 };
 
 export type PerDayFocusResult = FocusResult & { date: DateTime };
@@ -40,21 +41,27 @@ export function getFocusTime(
   const events = rawEvents
     .filter((e) => e.status !== "cancelled") // Filter all day events
     .map((e) => new WrappedEvent(e))
-    .filter((e) => acceptedWithOthersOrOoO(e));
-  let perDay = [];
+    .filter((e) => e.myResponse !== "declined")
+    .filter((e) => e.isOutOfOffice || !e.isPersonalWithoutOthers);
+
+  let perDay: PerDayFocusResult[] = [];
   for (
     let today = from.set({ hour: config.startOfDay });
     today < to;
     today = today.plus({ day: 1 }).set({ hour: config.startOfDay })
   ) {
+    if (today.weekday > 5) {
+      // skip the weekend
+      continue;
+    }
     let eod = today.set({ hour: config.endOfDay });
     log.info(`Checking ${today} to ${eod}`);
     // Ideally you drop the events you've already seen, but meh.
     // You can't go left-to-right because some events span multiple days
     // So you have to re-query every time what is relevant for this day.
-    let te = events.filter((e) => isToday(today, eod, e));
+    let te = events.filter((e) => isInTodayWorkHours(today, eod, e));
     let inMeeting = getMeetingTime(te, today, eod);
-    let focusTime = getFocusTimeslots(te, eod, config);
+    let focusTime = getFocusTimeSlots(te, eod, config);
     perDay.push({
       date: today,
       inOfficeTime: 0,
@@ -65,16 +72,7 @@ export function getFocusTime(
   return getTotal(perDay);
 }
 
-function getTotal(
-  perDay: {
-    inMeeting: number;
-    inRecurringMeeting: number;
-    focusTime: number;
-    focusTimeSlots: number;
-    date: DateTime;
-    inOfficeTime: number;
-  }[]
-): TotalFocusResult {
+function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
   return perDay.reduce(
     (acc, next) => {
       acc.perDay.push(next);
@@ -83,6 +81,7 @@ function getTotal(
       acc.inMeeting += next.inMeeting;
       acc.inRecurringMeeting += next.inRecurringMeeting;
       acc.inOfficeTime += next.inOfficeTime;
+      acc.inOneOnOne += next.inOneOnOne;
       return acc;
     },
     {
@@ -91,6 +90,7 @@ function getTotal(
       inOfficeTime: 0,
       inMeeting: 0,
       inRecurringMeeting: 0,
+      inOneOnOne: 0,
       perDay: [],
     } as TotalFocusResult
   );
@@ -100,29 +100,32 @@ function getMeetingTime(
   te: WrappedEvent[],
   today: DateTime,
   eod: DateTime
-): Pick<PerDayFocusResult, "inMeeting" | "inRecurringMeeting"> {
+): Pick<PerDayFocusResult, "inMeeting" | "inRecurringMeeting" | "inOneOnOne"> {
   log.info(
     "Today you have non-focus: ",
     te.map((e) => e.prettyPrint())
   );
-  let [noFocus, noFocusRecurring] = te.reduce(
-    ([total, recurring], event) => {
-      let duration =
-        event.getDurationTrucatedToDay(today, eod).as("minutes") / 60.0;
+  let meetings = te.reduce(
+    (agg, event) => {
+      let duration = event.getDurationTrucatedToDay(today, eod).as("minutes");
+      agg.inMeeting += duration;
       if (event.isRecurring) {
-        return [total + duration, recurring + duration];
+        agg.inRecurringMeeting += duration;
       }
-      return [total + duration, recurring];
+      if (event.isOneOnOne) {
+        agg.inOneOnOne += duration;
+      }
+      return agg;
     },
-    [0, 0]
+    { inMeeting: 0, inRecurringMeeting: 0, inOneOnOne: 0 }
   );
   log.info(
-    `That's ${noFocus} of meetings, of which ${noFocusRecurring} recurring `
+    `That's ${meetings.inMeeting} of meetings, of which ${meetings.inRecurringMeeting} recurring and ${meetings.inOneOnOne} 1-1`
   );
-  return { inMeeting: noFocus, inRecurringMeeting: noFocusRecurring };
+  return meetings;
 }
 
-function getFocusTimeslots(
+function getFocusTimeSlots(
   te: WrappedEvent[],
   eod: DateTime,
   config: Config
@@ -160,7 +163,7 @@ function getFocusTimeslots(
       log.info(
         `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()}`
       );
-      if (minutes > config.focusThresholdMinutes) {
+      if (minutes >= config.focusThresholdMinutes) {
         slots++;
         totalTime += minutes;
       }
@@ -175,7 +178,7 @@ function getFocusTimeslots(
         log.info(
           `${remaining}m of focus before EOD after ${current.prettyPrint()}`
         );
-        if (remaining > config.focusThresholdMinutes) {
+        if (remaining >= config.focusThresholdMinutes) {
           slots++;
           totalTime += remaining;
         }
@@ -185,7 +188,11 @@ function getFocusTimeslots(
   return { focusTimeSlots: slots, focusTime: totalTime };
 }
 
-function isToday(today: DateTime, eod: DateTime, event: WrappedEvent): boolean {
+function isInTodayWorkHours(
+  today: DateTime,
+  eod: DateTime,
+  event: WrappedEvent
+): boolean {
   if (!event.start) {
     log.warn(`${event.summary} Has no start date?`, event);
     return false;
@@ -205,21 +212,4 @@ function isToday(today: DateTime, eod: DateTime, event: WrappedEvent): boolean {
     log.info(`${event.summary} Has no end time. Ignoring`);
     return false;
   }
-}
-
-function acceptedWithOthersOrOoO(e: WrappedEvent): boolean {
-  if (e.original.eventType === "outOfOffice") {
-    return true;
-  }
-  let at = e.original.attendees || [];
-  let accepted = at.some((a) => a.self && a.responseStatus !== "declined");
-  if (!accepted) {
-    log.info(`Ignoring declined ${e.summary}`);
-  } else if (at.length <= 1) {
-    log.info(`Ignoring self-set ${e.summary}`);
-  }
-  if (e.summary?.includes("Huddle")) {
-    log.info("Huddle", e.original);
-  }
-  return accepted && at.length > 1;
 }
