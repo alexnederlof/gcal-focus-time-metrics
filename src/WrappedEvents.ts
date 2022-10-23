@@ -11,23 +11,25 @@ export class WrappedEvent {
 
   constructor(event: calendar_v3.Schema$Event) {
     this.original = event;
-    if (!event.start?.date || !event.start?.dateTime) {
-      throw Error(`${event.summary} has no start`);
+    if (!event.start?.date && !event.start?.dateTime) {
+      throw Error(
+        `${event.summary} has no start: ${JSON.stringify(event.start)}`
+      );
     }
     if (event.start?.date) {
       this.allDay = true;
       this.start = DateTime.fromISO(event.start!.date);
     } else {
       this.allDay = false;
-      this.start = DateTime.fromISO(event.start!.dateTime);
+      this.start = DateTime.fromISO(event.start!.dateTime!);
     }
-    if (!event.end?.date || !event.end?.dateTime) {
+    if (!event.end?.date && !event.end?.dateTime) {
       throw Error(`${event.summary} has no end`);
     }
     if (event.end?.date) {
-      this.finish = DateTime.fromISO(event.start!.date);
+      this.finish = DateTime.fromISO(event.end!.date)!;
     } else {
-      this.finish = DateTime.fromISO(event.start!.dateTime);
+      this.finish = DateTime.fromISO(event.end!.dateTime!);
     }
   }
 
@@ -42,11 +44,19 @@ export class WrappedEvent {
   }
 
   public prettyPrint() {
-    const attendees = this.original.attendees
+    let attendees = this.original.attendees
       ?.filter((e) => !e.self)
       .map((e) => e.displayName || e.email?.split("@")[0])
       .join(", ");
-    return `${this.summary} from ${this.start} to ${this.finish} with ${attendees}`;
+    if (attendees?.length) {
+      attendees = `with ${attendees}`;
+    }
+    let start = this.start.toFormat("MM/dd HH:mm");
+    let end = this.finish.toFormat("MM/dd HH:mm");
+    if (this.finish.get("day") == this.start.get("day")) {
+      end = this.finish.toFormat("HH:mm");
+    }
+    return `${this.summary} from ${start} to ${end} ${attendees}`;
   }
 
   public getDurationTrucatedToDay(sod: DateTime, eod: DateTime) {
