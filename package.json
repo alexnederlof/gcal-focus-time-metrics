@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@google-cloud/local-auth": "2.1.1",
-    "@types/node": "^18.11.3",
+    "@types/node": "^18.11.4",
     "googleapis": "108.0.0",
     "luxon": "^3.0.4",
     "tslog": "^3.3.4"
