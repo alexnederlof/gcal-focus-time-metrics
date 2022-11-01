@@ -25,7 +25,7 @@
     "@google-cloud/local-auth": "2.1.1",
     "@types/node": "^18.11.3",
     "googleapis": "108.0.0",
-    "luxon": "^3.0.4",
+    "luxon": "^3.1.0",
     "tslog": "^3.3.4"
   }
 }
