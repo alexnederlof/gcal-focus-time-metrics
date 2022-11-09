@@ -1,7 +1,6 @@
 import { authenticate } from "@google-cloud/local-auth";
 import fs from "fs/promises";
 import { OAuth2Client } from "google-auth-library";
-import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
 import { google } from "googleapis";
 import path from "path";
 
@@ -21,6 +20,9 @@ const CREDENTIALS_PATH = path.join(process.cwd(), "secrets/credentials.json");
 async function loadSavedCredentialsIfExist() {
   try {
     const content = await fs.readFile(TOKEN_PATH, { encoding: "utf8" });
+    if (!content) {
+      return null;
+    }
     const credentials = JSON.parse(content);
     return google.auth.fromJSON(credentials);
   } catch (err) {
@@ -55,11 +57,19 @@ async function saveCredentials(client: OAuth2Client) {
  * Load or request or authorization to call APIs.
  *
  */
-export type AnyAuthClient = JSONClient | OAuth2Client;
+export type AnyAuthClient =
+  | OAuth2Client
+  | ReturnType<typeof google.auth.fromJSON>;
 export async function authorize(): Promise<AnyAuthClient> {
   let jsonClient = await loadSavedCredentialsIfExist();
   if (jsonClient) {
-    return jsonClient;
+    try {
+      await jsonClient?.getAccessToken();
+      return jsonClient;
+    } catch (e) {
+      console.info("Problem with cached token. Getting a new one", e);
+      await fs.rm(TOKEN_PATH);
+    }
   }
   let client = await authenticate({
     scopes: SCOPES,

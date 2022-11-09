@@ -1,9 +1,10 @@
 {
-    "extends": "@tsconfig/node16/tsconfig.json",
-    "compilerOptions": {
-      "preserveConstEnums": true,
-      "sourceMap": true,
-    },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "**/*.spec.ts"]
-  }
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "compilerOptions": {
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "outDir": "build"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
