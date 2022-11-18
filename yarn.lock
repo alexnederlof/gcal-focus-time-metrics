@@ -667,10 +667,10 @@ ts-node@^10.9.1:
     v8-compile-cache-lib "^3.0.1"
     yn "3.1.1"
 
-tslog@^4.0.4:
-  version "4.0.4"
-  resolved "https://registry.yarnpkg.com/tslog/-/tslog-4.0.4.tgz#0d71a1f574e14ff2b4b5f6f2831795dc2a431cc6"
-  integrity sha512-4f2gTKYyI01/MHVj3pIzSd+tG8RBbM5IxepA2VihCFVQs7CWGmLVbz7SeHvZU9F1/tYOv31/pvvNCBlTYTknFw==
+tslog@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/tslog/-/tslog-4.1.0.tgz#651d7acf361e1d140b8103c5eb30fefd1c45e724"
+  integrity sha512-fOOP9XA/BW0jpcOe0bJIr8bssSl0fbodErPicCDNTEx2kkO5jJQHDZLG69FJun11Cl4+PPnulP3vTajK3YVwxw==
 
 typescript@^4.9.3:
   version "4.9.3"
