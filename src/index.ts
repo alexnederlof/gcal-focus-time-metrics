@@ -32,7 +32,7 @@ async function main() {
       `${e.date.toFormat("MM/dd")} ${hr(e.inMeeting)} in meeting (${hr(
         e.inRecurringMeeting
       )} recurring, ${hr(e.inOneOnOne)} 1-1). ${hr(e.focusTime)} focus in ${
-        e.focusTimeSlots
+        e.focusTimeSlots.length
       } slots`
     );
   });

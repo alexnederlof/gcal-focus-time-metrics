@@ -16,11 +16,13 @@ const DEFAULT_CONFIG: Config = {
 
 export type FocusResult = {
   focusTime: number;
-  focusTimeSlots: number;
+  focusTimeSlots: Array<{ start: DateTime; end: DateTime; minutes: number }>;
+  events: WrappedEvent[];
   inOfficeTime: number;
   inMeeting: number;
   inRecurringMeeting: number;
   inOneOnOne: number;
+  outOfOffice: number;
 };
 
 export type PerDayFocusResult = FocusResult & { date: DateTime };
@@ -51,12 +53,7 @@ export function getFocusTime(
       // skip the weekend
       continue;
     }
-    let oOoToday = events.find((e) => e.allDay && e.isOutOfOffice);
-    if (oOoToday) {
-      console.log(
-        `Full out of office day: ${oOoToday.prettyPrint()}. Skipping `
-      );
-    }
+
     let eod = today.set({ hour: config.endOfDay });
     console.info(`Checking ${today} to ${eod}`);
     // Ideally you drop the events you've already seen, but meh.
@@ -68,6 +65,7 @@ export function getFocusTime(
     perDay.push({
       date: today,
       inOfficeTime: 0,
+      events: te,
       ...focusTime,
       ...inMeeting,
     });
@@ -80,21 +78,24 @@ function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
     (acc, next) => {
       acc.perDay.push(next);
       acc.focusTime += next.focusTime;
-      acc.focusTimeSlots += next.focusTimeSlots;
+      acc.focusTimeSlots.push(...next.focusTimeSlots);
       acc.inMeeting += next.inMeeting;
       acc.inRecurringMeeting += next.inRecurringMeeting;
       acc.inOfficeTime += next.inOfficeTime;
       acc.inOneOnOne += next.inOneOnOne;
+      acc.outOfOffice += next.outOfOffice;
       return acc;
     },
     {
       focusTime: 0,
-      focusTimeSlots: 0,
+      focusTimeSlots: [],
       inOfficeTime: 0,
       inMeeting: 0,
       inRecurringMeeting: 0,
       inOneOnOne: 0,
+      outOfOffice: 0,
       perDay: [],
+      events: [],
     } as TotalFocusResult
   );
 }
@@ -103,7 +104,10 @@ function getMeetingTime(
   te: WrappedEvent[],
   today: DateTime,
   eod: DateTime
-): Pick<PerDayFocusResult, "inMeeting" | "inRecurringMeeting" | "inOneOnOne"> {
+): Pick<
+  PerDayFocusResult,
+  "inMeeting" | "inRecurringMeeting" | "inOneOnOne" | "outOfOffice"
+> {
   console.info(
     "Today you have non-focus: ",
     te.map((e) => e.prettyPrint())
@@ -111,16 +115,20 @@ function getMeetingTime(
   let meetings = te.reduce(
     (agg, event) => {
       let duration = event.getDurationTruncatedToDay(today, eod).as("minutes");
-      agg.inMeeting += duration;
       if (event.isRecurring) {
         agg.inRecurringMeeting += duration;
       }
       if (event.isOneOnOne) {
         agg.inOneOnOne += duration;
       }
+      if (event.isOutOfOffice) {
+        agg.outOfOffice += duration;
+      } else {
+        agg.inMeeting += duration;
+      }
       return agg;
     },
-    { inMeeting: 0, inRecurringMeeting: 0, inOneOnOne: 0 }
+    { inMeeting: 0, inRecurringMeeting: 0, inOneOnOne: 0, outOfOffice: 0 }
   );
   console.info(
     `That's ${meetings.inMeeting} of meetings, of which ${meetings.inRecurringMeeting} recurring and ${meetings.inOneOnOne} 1-1`
@@ -133,7 +141,7 @@ function getFocusTimeSlots(
   eod: DateTime,
   config: Config
 ): Pick<PerDayFocusResult, "focusTime" | "focusTimeSlots"> {
-  let slots = 0;
+  let slots: FocusResult["focusTimeSlots"] = [];
   let totalTime = 0;
   for (let i = 0; i < te.length; i++) {
     let current = te[i];
@@ -166,8 +174,15 @@ function getFocusTimeSlots(
       console.info(
         `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()}`
       );
+      if (minutes < 0) {
+        // TODO, deal with overlapping events.
+        console.error("I cannot deal with overlapping events yet ", [
+          next.prettyPrint(),
+          current.prettyPrint(),
+        ]);
+      }
       if (minutes >= config.focusThresholdMinutes) {
-        slots++;
+        slots.push({ start: current.finish, end: compareTo, minutes });
         totalTime += minutes;
       }
     } else {
@@ -182,7 +197,7 @@ function getFocusTimeSlots(
           `${remaining}m of focus before EOD after ${current.prettyPrint()}`
         );
         if (remaining >= config.focusThresholdMinutes) {
-          slots++;
+          slots.push({ start: current.finish, end: eod, minutes: remaining });
           totalTime += remaining;
         }
       }
