@@ -51,6 +51,12 @@ export function getFocusTime(
       // skip the weekend
       continue;
     }
+    let oOoToday = events.find((e) => e.allDay && e.isOutOfOffice);
+    if (oOoToday) {
+      console.log(
+        `Full out of office day: ${oOoToday.prettyPrint()}. Skipping `
+      );
+    }
     let eod = today.set({ hour: config.endOfDay });
     console.info(`Checking ${today} to ${eod}`);
     // Ideally you drop the events you've already seen, but meh.
