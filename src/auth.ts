@@ -1,82 +1,108 @@
-import { authenticate } from "@google-cloud/local-auth";
+import { Handler, Response } from "express";
 import fs from "fs/promises";
-import { OAuth2Client } from "google-auth-library";
-import { google } from "googleapis";
-import path from "path";
+import { Auth } from "googleapis";
 
-// If modifying these scopes, delete token.json.
+interface ClientDetails {
+  web: {
+    client_id: string;
+    project_id: string;
+    auth_uri: string;
+    token_uri: string;
+    auth_provider_x509_cert_url: string;
+    client_secret: string;
+    redirect_uris: string[];
+    javascript_origins: string[];
+  };
+}
+
+const COOKIE_NAME = "gt";
 const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
-// The file token.json stores the user's access and refresh tokens, and is
-// created automatically when the authorization flow completes for the first
-// time.
-const TOKEN_PATH = path.join(process.cwd(), "secrets/token.json");
-const CREDENTIALS_PATH = path.join(process.cwd(), "secrets/credentials.json");
+export class GoogleAuth {
+  constructor(public client: Auth.OAuth2Client) {}
 
-/**
- * Reads previously authorized credentials from the save file.
- *
- * @return {Promise<OAuth2Client|null>}
- */
-async function loadSavedCredentialsIfExist() {
-  try {
-    const content = await fs.readFile(TOKEN_PATH, { encoding: "utf8" });
-    if (!content) {
-      return null;
+  static async create() {
+    let asText = await fs.readFile("secrets/credentials.server.json", "utf-8");
+    let { web } = JSON.parse(asText) as ClientDetails;
+    let redi = web.redirect_uris.find((u) => u.includes("localhost"));
+    if (process.env["NODE_ENV"] === "prod") {
+      redi = web.redirect_uris.find((u) => !u.includes("localhost"));
     }
-    const credentials = JSON.parse(content);
-    return google.auth.fromJSON(credentials);
-  } catch (err) {
-    return null;
+    return new GoogleAuth(
+      new Auth.OAuth2Client(web.client_id, web.client_secret, redi)
+    );
   }
-}
 
-/**
- * Serializes credentials to a file compatible with GoogleAUth.fromJSON.
- *
- * @param {OAuth2Client} client
- * @return {Promise<void>}
- */
-async function saveCredentials(client: OAuth2Client) {
-  const content = await fs.readFile(CREDENTIALS_PATH, { encoding: "utf-8" });
-  const keys = JSON.parse(content);
-  const key = keys.installed || keys.web;
-  const payload = JSON.stringify(
-    {
-      type: "authorized_user",
-      client_id: key.client_id,
-      client_secret: key.client_secret,
-      refresh_token: client.credentials.refresh_token,
-    },
-    null,
-    2
-  );
-  await fs.writeFile(TOKEN_PATH, payload);
-}
+  public requireLogin(): Handler {
+    let client = this.client;
+    return (req, resp, next) => {
+      let cookie = req.cookies[COOKIE_NAME];
+      console.log("Cookie " + cookie);
+      if (!cookie) {
+        console.debug("You are not logged in ");
+        return redirToGoogle(resp);
+      } else {
+        try {
+          console.debug("You are logged in with " + cookie);
+          let tokens = JSON.parse(cookie) as Auth.Credentials;
+          client.setCredentials(tokens);
+          next();
+        } catch (e) {
+          console.error("Could not set credentials" + e);
+          return redirToGoogle(resp);
+        }
+      }
 
-/**
- * Load or request or authorization to call APIs.
- *
- */
-export type AnyAuthClient =
-  | OAuth2Client
-  | ReturnType<typeof google.auth.fromJSON>;
-export async function authorize(): Promise<AnyAuthClient> {
-  let jsonClient = await loadSavedCredentialsIfExist();
-  if (jsonClient) {
-    try {
-      await jsonClient?.getAccessToken();
-      return jsonClient;
-    } catch (e) {
-      console.info("Problem with cached token. Getting a new one", e);
-      await fs.rm(TOKEN_PATH);
-    }
+      function redirToGoogle(resp: Response) {
+        let redir = client.generateAuthUrl({
+          access_type: "offline",
+          scope: SCOPES,
+        });
+        return resp.redirect(redir);
+      }
+    };
   }
-  let client = await authenticate({
-    scopes: SCOPES,
-    keyfilePath: CREDENTIALS_PATH,
-  });
-  if (client.credentials) {
-    await saveCredentials(client);
+
+  public handleLogOut(): Handler {
+    return (req, resp) => {
+      console.log("Logging yout out");
+      resp.clearCookie(COOKIE_NAME).send("You are now logged out");
+    };
   }
-  return client;
+
+  public handleCallBack(): Handler {
+    const client = this.client;
+    return async (req, res) => {
+      console.log("Gonna handle auth for ", req.query);
+      if (req.query.error) {
+        // The user did not give us permission.
+        console.error(`Received Google error ` + req.query.error);
+        return res.redirect("/");
+      } else {
+        try {
+          console.log("Getting tokens from google");
+          let { tokens } = await client.getToken(req.query.code as string);
+          console.log("Got tokens. Setting cookie");
+          let expires = undefined;
+          if (tokens.expiry_date) {
+            console.log("Token expires", [
+              tokens.expiry_date,
+              new Date(tokens.expiry_date),
+              new Date(),
+            ]);
+            expires = new Date(tokens.expiry_date);
+          }
+          res
+            .cookie(COOKIE_NAME, JSON.stringify(tokens), {
+              httpOnly: process.env["NODE_ENV"] === "prod",
+              secure: true,
+              sameSite: true,
+            })
+            .redirect("/?a=b");
+        } catch (err) {
+          console.error("Cannot do a thing" + err);
+          return res.redirect("/");
+        }
+      }
+    };
+  }
 }

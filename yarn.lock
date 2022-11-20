@@ -9,16 +9,6 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@google-cloud/local-auth@2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@google-cloud/local-auth/-/local-auth-2.1.1.tgz#fa790813cd8e45402a2681ff662c62f11bdb0c4c"
-  integrity sha512-tOJ73TSyPxelUEVN2AdHVzFG857U5i3wZHMUGgm6wRtz9WN4O3D761eYORB9jXfIggA3+v5BUw+VIE5wAKHhkg==
-  dependencies:
-    arrify "^2.0.1"
-    google-auth-library "^8.0.2"
-    open "^7.0.3"
-    server-destroy "^1.0.1"
-
 "@jridgewell/resolve-uri@^3.0.3":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz#2203b118c157721addfe69d47b70465463066d78"
@@ -77,6 +67,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cookie-parser@^1.4.3":
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/@types/cookie-parser/-/cookie-parser-1.4.3.tgz#3a01df117c5705cf89a84c876b50c5a1fd427a21"
+  integrity sha512-CqSKwFwefj4PzZ5n/iwad/bow2hTCh0FlNAeWLtQM3JA/NX/iYagIpWG2cf1bQKQ2c9gU2log5VUCrn7LDOs0w==
+  dependencies:
+    "@types/express" "*"
+
 "@types/express-serve-static-core@^4.17.18":
   version "4.17.31"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.17.31.tgz#a1139efeab4e7323834bb0226e62ac019f474b2f"
@@ -86,7 +83,7 @@
     "@types/qs" "*"
     "@types/range-parser" "*"
 
-"@types/express@^4.17.14":
+"@types/express@*", "@types/express@^4.17.14":
   version "4.17.14"
   resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.14.tgz#143ea0557249bc1b3b54f15db4c81c3d4eb3569c"
   integrity sha512-TEbt+vaPFQ+xpxFLFssxUDXj5cWCxZJjIcB7Yg0k0GMHGtgtQgpvx/MUQUeAkNbA9AAGrwkAsoeItdTgS7FMyg==
@@ -318,10 +315,23 @@ content-type@~1.0.4:
   resolved "https://registry.yarnpkg.com/content-type/-/content-type-1.0.4.tgz#e138cc75e040c727b1966fe5e5f8c9aee256fe3b"
   integrity sha512-hIP3EEPs8tB9AT1L+NUqtwOAps4mk2Zob89MWXMHjHWg9milF/j4osnnQLXBCBFBk/tvIG/tUc9mOUJiPBhPXA==
 
+cookie-parser@^1.4.6:
+  version "1.4.6"
+  resolved "https://registry.yarnpkg.com/cookie-parser/-/cookie-parser-1.4.6.tgz#3ac3a7d35a7a03bbc7e365073a26074824214594"
+  integrity sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==
+  dependencies:
+    cookie "0.4.1"
+    cookie-signature "1.0.6"
+
 cookie-signature@1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/cookie-signature/-/cookie-signature-1.0.6.tgz#e303a882b342cc3ee8ca513a79999734dab3ae2c"
   integrity sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==
+
+cookie@0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/cookie/-/cookie-0.4.1.tgz#afd713fe26ebd21ba95ceb61f9a8116e50a537d1"
+  integrity sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==
 
 cookie@0.5.0:
   version "0.5.0"
@@ -542,7 +552,7 @@ get-stream@^5.0.0:
   dependencies:
     pump "^3.0.0"
 
-google-auth-library@^8.0.2:
+google-auth-library@^8.0.2, google-auth-library@^8.7.0:
   version "8.7.0"
   resolved "https://registry.yarnpkg.com/google-auth-library/-/google-auth-library-8.7.0.tgz#e36e255baba4755ce38dded4c50f896cf8515e51"
   integrity sha512-1M0NG5VDIvJZEnstHbRdckLZESoJwguinwN8Dhae0j2ZKIQFIV63zxm6Fo6nM4xkgqUr2bbMtV5Dgo+Hy6oo0Q==
@@ -661,22 +671,10 @@ ipaddr.js@1.9.1:
   resolved "https://registry.yarnpkg.com/ipaddr.js/-/ipaddr.js-1.9.1.tgz#bff38543eeb8984825079ff3a2a8e6cbd46781b3"
   integrity sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==
 
-is-docker@^2.0.0:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/is-docker/-/is-docker-2.2.1.tgz#33eeabe23cfe86f14bde4408a02c0cfb853acdaa"
-  integrity sha512-F+i2BKsFrH66iaUFc0woD8sLy8getkwTwtOBjvs56Cx4CgJDeKQeqfz8wAYiSb8JOprWhHH5p77PbmYCvvUuXQ==
-
 is-stream@^2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/is-stream/-/is-stream-2.0.1.tgz#fac1e3d53b97ad5a9d0ae9cef2389f5810a5c077"
   integrity sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==
-
-is-wsl@^2.1.1:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/is-wsl/-/is-wsl-2.2.0.tgz#74a4c76e77ca9fd3f932f290c17ea326cd157271"
-  integrity sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==
-  dependencies:
-    is-docker "^2.0.0"
 
 isexe@^2.0.0:
   version "2.0.0"
@@ -873,14 +871,6 @@ onetime@^5.1.0:
   dependencies:
     mimic-fn "^2.1.0"
 
-open@^7.0.3:
-  version "7.4.2"
-  resolved "https://registry.yarnpkg.com/open/-/open-7.4.2.tgz#b8147e26dcf3e426316c730089fd71edd29c2321"
-  integrity sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==
-  dependencies:
-    is-docker "^2.0.0"
-    is-wsl "^2.1.1"
-
 p-limit@^2.2.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/p-limit/-/p-limit-2.3.0.tgz#3dd33c647a214fdfffd835933eb086da0dc21db1"
@@ -1035,11 +1025,6 @@ serve-static@1.15.0:
     escape-html "~1.0.3"
     parseurl "~1.3.3"
     send "0.18.0"
-
-server-destroy@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/server-destroy/-/server-destroy-1.0.1.tgz#f13bf928e42b9c3e79383e61cc3998b5d14e6cdd"
-  integrity sha512-rb+9B5YBIEzYcD6x2VKidaa+cqYBJQKnU4oe4E3ANwRRN56yk/ua1YCJT1n21NTS8w6CcOclAKNP3PhdCXKYtQ==
 
 setprototypeof@1.2.0:
   version "1.2.0"

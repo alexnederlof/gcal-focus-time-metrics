@@ -26,6 +26,7 @@ export class WrappedEvent {
       this.allDay = false;
       this.start = DateTime.fromISO(event.start!.dateTime!);
     }
+
     if (!event.end?.date && !event.end?.dateTime) {
       throw Error(`${event.summary} has no end`);
     }
@@ -33,6 +34,16 @@ export class WrappedEvent {
       this.finish = DateTime.fromISO(event.end!.date)!;
     } else {
       this.finish = DateTime.fromISO(event.end!.dateTime!);
+    }
+
+    // Some times all day events do have dates and times.
+    if (
+      this.start.hour === 0 &&
+      this.start.minute === 0 &&
+      this.finish.hour === 0 &&
+      this.finish.minute === 0
+    ) {
+      this.allDay = true;
     }
   }
 

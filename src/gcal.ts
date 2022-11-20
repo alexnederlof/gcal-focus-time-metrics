@@ -1,13 +1,13 @@
 import { GaxiosResponse } from "gaxios";
 import { calendar_v3, google } from "googleapis";
+import { Auth } from "googleapis";
 import { DateTime } from "luxon";
-import { AnyAuthClient } from "./auth";
 
 export class SimpleGcal {
   private readonly gcal: calendar_v3.Calendar;
 
-  constructor(auth: AnyAuthClient) {
-    this.gcal = google.calendar({ version: "v3", auth });
+  constructor(auth: Auth.OAuth2Client) {
+    this.gcal = google.calendar({ version: "v3", auth: auth });
   }
 
   /**

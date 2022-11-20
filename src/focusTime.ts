@@ -60,6 +60,10 @@ export function getFocusTime(
     // You can't go left-to-right because some events span multiple days
     // So you have to re-query every time what is relevant for this day.
     let te = events.filter((e) => isInTodayWorkHours(today, eod, e));
+    if (te.some((e) => e.allDay && e.isOutOfOffice)) {
+      // Skip OoO days
+      continue;
+    }
     let inMeeting = getMeetingTime(te, today, eod);
     let focusTime = getFocusTimeSlots(te, eod, config);
     perDay.push({
@@ -175,11 +179,7 @@ function getFocusTimeSlots(
         `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()}`
       );
       if (minutes < 0) {
-        // TODO, deal with overlapping events.
-        console.error("I cannot deal with overlapping events yet ", [
-          next.prettyPrint(),
-          current.prettyPrint(),
-        ]);
+        // throw new Error("Overlapping events should not be possible here")
       }
       if (minutes >= config.focusThresholdMinutes) {
         slots.push({ start: current.finish, end: compareTo, minutes });
@@ -213,10 +213,6 @@ function isInTodayWorkHours(
 ): boolean {
   if (!event.start) {
     console.warn(`${event.summary} Has no start date?`, event);
-    return false;
-  }
-  if (event.allDay) {
-    console.info(`${event.summary} Is all day. Ignoring`);
     return false;
   }
 
