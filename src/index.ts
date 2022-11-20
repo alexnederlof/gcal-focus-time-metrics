@@ -1,7 +1,10 @@
+import express from "express";
 import { DateTime } from "luxon";
+import ReactDOMServer from "react-dom/server";
 import { authorize } from "./auth";
 import { getFocusTime } from "./focusTime";
 import { SimpleGcal } from "./gcal";
+import { Welcome } from "./layout/Welcome";
 
 async function main() {
   console.info("Hey there, let's go");
@@ -38,7 +41,23 @@ async function main() {
   });
 }
 
-main().catch((e) => {
+async function server() {
+  const app = express();
+  app.get("/", async (req, resp) => {
+    resp.send(ReactDOMServer.renderToString(Welcome({})));
+  });
+
+  let port = Number(process.env["NODE_PORT"] || 3000);
+  let server = app.listen(port, () =>
+    console.log(`Started @ http://localhost:${port}`)
+  );
+
+  process.on("SIGINT", server.close);
+  process.on("SIGTERM", server.close);
+  process.on("SIGHUP", server.close);
+}
+
+server().catch((e) => {
   console.error(e);
   process.exit(1);
 });
