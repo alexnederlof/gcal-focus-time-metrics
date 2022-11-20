@@ -1,6 +1,5 @@
 import { calendar_v3 } from "googleapis";
 import { DateTime } from "luxon";
-import { Logger } from "tslog";
 import { WrappedEvent } from "./WrappedEvents";
 
 export type Config = {
@@ -14,8 +13,6 @@ const DEFAULT_CONFIG: Config = {
   endOfDay: 19,
   focusThresholdMinutes: 120,
 };
-
-const log = new Logger();
 
 export type FocusResult = {
   focusTime: number;
@@ -55,7 +52,7 @@ export function getFocusTime(
       continue;
     }
     let eod = today.set({ hour: config.endOfDay });
-    log.info(`Checking ${today} to ${eod}`);
+    console.info(`Checking ${today} to ${eod}`);
     // Ideally you drop the events you've already seen, but meh.
     // You can't go left-to-right because some events span multiple days
     // So you have to re-query every time what is relevant for this day.
@@ -101,7 +98,7 @@ function getMeetingTime(
   today: DateTime,
   eod: DateTime
 ): Pick<PerDayFocusResult, "inMeeting" | "inRecurringMeeting" | "inOneOnOne"> {
-  log.info(
+  console.info(
     "Today you have non-focus: ",
     te.map((e) => e.prettyPrint())
   );
@@ -119,7 +116,7 @@ function getMeetingTime(
     },
     { inMeeting: 0, inRecurringMeeting: 0, inOneOnOne: 0 }
   );
-  log.info(
+  console.info(
     `That's ${meetings.inMeeting} of meetings, of which ${meetings.inRecurringMeeting} recurring and ${meetings.inOneOnOne} 1-1`
   );
   return meetings;
@@ -137,14 +134,14 @@ function getFocusTimeSlots(
     if (current.allDay) {
       if (current.original.eventType === "outOfOffice") {
         // TODO how do multiple OoO days work?
-        log.info("Ignoring full out of office day " + current.summary);
+        console.info("Ignoring full out of office day " + current.summary);
       } else {
-        log.warn("Ignoring full day event " + current.summary);
+        console.warn("Ignoring full day event " + current.summary);
       }
       continue;
     }
     if (current.start > eod) {
-      log.info(
+      console.info(
         `Ignoring after hours ${current.summary} that starts at ${current.start}`
       );
     }
@@ -153,14 +150,14 @@ function getFocusTimeSlots(
     if (next) {
       let compareTo = next.start;
       if (compareTo > eod) {
-        log.info(
+        console.info(
           `Next event ${next.summary} starts after hours (${compareTo}). Taking EOD instead ${eod}`
         );
         compareTo = eod;
       }
       duration = compareTo.diff(current.finish);
       const minutes = duration.as("minutes");
-      log.info(
+      console.info(
         `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()}`
       );
       if (minutes >= config.focusThresholdMinutes) {
@@ -170,12 +167,12 @@ function getFocusTimeSlots(
     } else {
       // Last event of the day
       if (current.finish > eod) {
-        log.info(
+        console.info(
           `${current.summary} Is the last event of the day and ends after work time, so no focus.`
         );
       } else {
         let remaining = eod.diff(current.finish).as("minutes");
-        log.info(
+        console.info(
           `${remaining}m of focus before EOD after ${current.prettyPrint()}`
         );
         if (remaining >= config.focusThresholdMinutes) {
@@ -194,11 +191,11 @@ function isInTodayWorkHours(
   event: WrappedEvent
 ): boolean {
   if (!event.start) {
-    log.warn(`${event.summary} Has no start date?`, event);
+    console.warn(`${event.summary} Has no start date?`, event);
     return false;
   }
   if (event.allDay) {
-    log.info(`${event.summary} Is all day. Ignoring`);
+    console.info(`${event.summary} Is all day. Ignoring`);
     return false;
   }
 
@@ -209,7 +206,7 @@ function isInTodayWorkHours(
   if (event.finish) {
     return event.finish > today;
   } else {
-    log.info(`${event.summary} Has no end time. Ignoring`);
+    console.info(`${event.summary} Has no end time. Ignoring`);
     return false;
   }
 }

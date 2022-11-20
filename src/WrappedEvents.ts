@@ -1,7 +1,5 @@
 import { calendar_v3 } from "googleapis";
 import { DateTime } from "luxon";
-import { Logger } from "tslog";
-const log = new Logger();
 
 export type InviteResponse =
   | "needsAction"
@@ -68,13 +66,13 @@ export class WrappedEvent {
     let start = this.start;
     let end = this.finish;
     if (start < sod) {
-      log.info(
+      console.info(
         `${this.summary} started before SOD at ${this.start}. Truncating`
       );
       start = sod;
     }
     if (end > eod) {
-      log.info(`${this.summary} ended after EOD at ${end}. Truncating`);
+      console.info(`${this.summary} ended after EOD at ${end}. Truncating`);
       end = eod;
     }
     return end.diff(start); // .as("minutes") / 60.0
