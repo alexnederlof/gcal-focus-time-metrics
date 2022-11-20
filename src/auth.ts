@@ -44,6 +44,9 @@ export class GoogleAuth {
         try {
           console.debug("You are logged in with " + cookie);
           let tokens = JSON.parse(cookie) as Auth.Credentials;
+          if (new Date(tokens.expiry_date || 0) < new Date()) {
+            return redirToGoogle(resp);
+          }
           client.setCredentials(tokens);
           next();
         } catch (e) {
@@ -94,10 +97,11 @@ export class GoogleAuth {
           res
             .cookie(COOKIE_NAME, JSON.stringify(tokens), {
               httpOnly: process.env["NODE_ENV"] === "prod",
-              secure: true,
-              sameSite: true,
+              secure: process.env["NODE_ENV"] === "prod",
+              sameSite: process.env["NODE_ENV"] === "prod",
+              expires,
             })
-            .redirect("/?a=b");
+            .redirect("/");
         } catch (err) {
           console.error("Cannot do a thing" + err);
           return res.redirect("/");

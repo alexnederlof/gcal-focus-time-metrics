@@ -1,16 +1,31 @@
+import { Duration } from "luxon";
+import { config } from "process";
 import React from "react";
-import { FocusResult, TotalFocusResult } from "../focusTime";
+import { Config, FocusResult, TotalFocusResult } from "../focusTime";
 import { Body } from "./Body";
 import { DayView } from "./DayView";
 
-export function FocusTimeResults({ results }: { results: TotalFocusResult }) {
+export function FocusTimeResults({
+  results,
+  config,
+}: {
+  results: TotalFocusResult;
+  config: Config;
+}) {
   let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
-  const hr = (minutes: number) => format.format(minutes / 60.0) + "h";
+  const hr = (minutes: number) =>
+    Duration.fromObject({ minutes })
+      .rescale()
+      .toHuman({ unitDisplay: "short" });
+
   return (
     <Body title="Result for you">
       <>
         <section>
           <h1>Here's your focus time</h1>
+          <p>
+            From {config.from.toLocaleString()} to {config.to.toLocaleString()}
+          </p>
           <table className="table">
             <tbody>
               <tr>

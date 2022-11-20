@@ -53,7 +53,11 @@ function OneDay(
   events.sort((a, b) => a.start.toMillis() - b.start.toMillis());
   return (
     <tr key={id}>
-      <td>{day.date.toLocaleString()}</td>
+      <td>
+        {day.date.weekdayLong}
+        <br />
+        {day.date.toLocaleString()}
+      </td>
       <td>
         <p>
           {hr(day.focusTime)} of focus time in {day.focusTimeSlots.length}{" "}
@@ -71,7 +75,7 @@ function OneDay(
             {start.toFormat("HH:mm")} - {finish.toFormat("HH:mm")}:{" "}
             {focusMinutes ? (
               <span className="badge text-bg-success">
-                {hr(focusMinutes)} hrs of focus
+                {hr(focusMinutes)} of focus
               </span>
             ) : (
               title

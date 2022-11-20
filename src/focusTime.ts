@@ -6,12 +6,16 @@ export type Config = {
   startOfDay: number;
   endOfDay: number;
   focusThresholdMinutes: number;
+  focusContextSwitchMinutes: number;
+  from: DateTime;
+  to: DateTime;
 };
 
-const DEFAULT_CONFIG: Config = {
+export const DEFAULT_CONFIG: Omit<Config, "from" | "to"> = {
   startOfDay: 10,
   endOfDay: 19,
   focusThresholdMinutes: 120,
+  focusContextSwitchMinutes: 15,
 };
 
 export type FocusResult = {
@@ -29,24 +33,18 @@ export type PerDayFocusResult = FocusResult & { date: DateTime };
 export type TotalFocusResult = FocusResult & { perDay: PerDayFocusResult[] };
 
 export function getFocusTime(
-  from: DateTime,
-  to: DateTime,
   rawEvents: calendar_v3.Schema$Event[],
-  config = DEFAULT_CONFIG
+  config: Config
 ): TotalFocusResult {
-  if (from.weekday !== 1) {
-    throw `I need to start on a monday, not ${from.weekdayLong}`;
-  }
-  const events = rawEvents
-    .filter((e) => e.status !== "cancelled") // Filter all day events
-    .map((e) => new WrappedEvent(e))
-    .filter((e) => e.myResponse !== "declined")
-    .filter((e) => e.isOutOfOffice || !e.isPersonalWithoutOthers);
+  // if (from.weekday !== 1) {
+  //   throw `I need to start on a monday, not ${from.weekdayLong}`;
+  // }
+  const events = getRelevantEvents(rawEvents);
 
   let perDay: PerDayFocusResult[] = [];
   for (
-    let today = from.set({ hour: config.startOfDay });
-    today < to;
+    let today = config.from.set({ hour: config.startOfDay });
+    today < config.to;
     today = today.plus({ day: 1 }).set({ hour: config.startOfDay })
   ) {
     if (today.weekday > 5) {
@@ -61,10 +59,10 @@ export function getFocusTime(
     // So you have to re-query every time what is relevant for this day.
     let te = events.filter((e) => isInTodayWorkHours(today, eod, e));
     if (te.some((e) => e.allDay && e.isOutOfOffice)) {
-      // Skip OoO days
+      // Skip OoO days all together
       continue;
     }
-    let inMeeting = getMeetingTime(te, today, eod);
+    let inMeeting = getMeetingStats(te, today, eod);
     let focusTime = getFocusTimeSlots(te, eod, config);
     perDay.push({
       date: today,
@@ -75,6 +73,18 @@ export function getFocusTime(
     });
   }
   return getTotal(perDay);
+}
+
+/**
+ * @param rawEvents The events from Google
+ * @returns all actual meetings you are going to. Not OutOfOffice events, or events without other attendees.
+ */
+function getRelevantEvents(rawEvents: calendar_v3.Schema$Event[]) {
+  return rawEvents
+    .filter((e) => e.status !== "cancelled") // Filter all day events
+    .map((e) => new WrappedEvent(e))
+    .filter((e) => e.myResponse !== "declined")
+    .filter((e) => e.isOutOfOffice || !e.isPersonalWithoutOthers);
 }
 
 function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
@@ -104,9 +114,16 @@ function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
   );
 }
 
-function getMeetingTime(
-  te: WrappedEvent[],
-  today: DateTime,
+/**
+ *
+ * @param todaysEvents All relevant events on this day.
+ * @param sod Start of day
+ * @param eod End of day
+ * @returns statistics on all the meetings that are planned for this day.
+ */
+function getMeetingStats(
+  todaysEvents: WrappedEvent[],
+  sod: DateTime,
   eod: DateTime
 ): Pick<
   PerDayFocusResult,
@@ -114,11 +131,11 @@ function getMeetingTime(
 > {
   console.info(
     "Today you have non-focus: ",
-    te.map((e) => e.prettyPrint())
+    todaysEvents.map((e) => e.prettyPrint())
   );
-  let meetings = te.reduce(
+  let meetings = todaysEvents.reduce(
     (agg, event) => {
-      let duration = event.getDurationTruncatedToDay(today, eod).as("minutes");
+      let duration = event.getDurationTruncatedToDay(sod, eod).as("minutes");
       if (event.isRecurring) {
         agg.inRecurringMeeting += duration;
       }
@@ -140,15 +157,22 @@ function getMeetingTime(
   return meetings;
 }
 
+/**
+ *
+ * @param todaysEvents
+ * @param eod End of this day
+ * @param config The config for your run
+ * @returns Statics on the focus time for this
+ */
 function getFocusTimeSlots(
-  te: WrappedEvent[],
+  todaysEvents: WrappedEvent[],
   eod: DateTime,
   config: Config
 ): Pick<PerDayFocusResult, "focusTime" | "focusTimeSlots"> {
   let slots: FocusResult["focusTimeSlots"] = [];
   let totalTime = 0;
-  for (let i = 0; i < te.length; i++) {
-    let current = te[i];
+  for (let i = 0; i < todaysEvents.length; i++) {
+    let current = todaysEvents[i];
     if (current.allDay) {
       if (current.original.eventType === "outOfOffice") {
         // TODO how do multiple OoO days work?
@@ -163,7 +187,7 @@ function getFocusTimeSlots(
         `Ignoring after hours ${current.summary} that starts at ${current.start}`
       );
     }
-    let next = te[i + 1];
+    let next = todaysEvents[i + 1];
     let duration;
     if (next) {
       let compareTo = next.start;
@@ -173,17 +197,25 @@ function getFocusTimeSlots(
         );
         compareTo = eod;
       }
-      duration = compareTo.diff(current.finish);
+      /*
+       * in case of overlapping events (someone accepted more than one meeting at the same time), where an events that's later in the array, but ends earlier
+       * we take the latest event to start calculating the focus time.
+       */
+      let calculateFrom = getLatestEndDateUntilNow(todaysEvents, i);
+      duration = compareTo.diff(calculateFrom);
       const minutes = duration.as("minutes");
       console.info(
-        `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()}`
+        `There are ${minutes}m between ${current.prettyPrint()} and ${next.prettyPrint()} calculating from ${calculateFrom.toISO()}`
       );
-      if (minutes < 0) {
-        // throw new Error("Overlapping events should not be possible here")
-      }
+
       if (minutes >= config.focusThresholdMinutes) {
-        slots.push({ start: current.finish, end: compareTo, minutes });
-        totalTime += minutes;
+        const actualFocusTime = minutes - config.focusContextSwitchMinutes;
+        slots.push({
+          start: calculateFrom,
+          end: compareTo,
+          minutes: actualFocusTime,
+        });
+        totalTime += actualFocusTime;
       }
     } else {
       // Last event of the day
@@ -197,8 +229,13 @@ function getFocusTimeSlots(
           `${remaining}m of focus before EOD after ${current.prettyPrint()}`
         );
         if (remaining >= config.focusThresholdMinutes) {
-          slots.push({ start: current.finish, end: eod, minutes: remaining });
-          totalTime += remaining;
+          const actualFocusTime = remaining - config.focusContextSwitchMinutes;
+          slots.push({
+            start: current.finish,
+            end: eod,
+            minutes: actualFocusTime,
+          });
+          totalTime += actualFocusTime;
         }
       }
     }
@@ -226,4 +263,24 @@ function isInTodayWorkHours(
     console.info(`${event.summary} Has no end time. Ignoring`);
     return false;
   }
+}
+
+/**
+ *
+ * @param todaysEvents All events
+ * @param i the index you're currently at
+ * @returns The last end time, up until i
+ */
+function getLatestEndDateUntilNow(
+  todaysEvents: WrappedEvent[],
+  i: number
+): DateTime {
+  let latest = todaysEvents[0]?.finish;
+  for (let index = 0; index <= i; index++) {
+    let other = todaysEvents[index].finish;
+    if (!latest || latest < other) {
+      latest = other;
+    }
+  }
+  return latest;
 }
