@@ -107,7 +107,7 @@ function getMeetingTime(
   );
   let meetings = te.reduce(
     (agg, event) => {
-      let duration = event.getDurationTrucatedToDay(today, eod).as("minutes");
+      let duration = event.getDurationTruncatedToDay(today, eod).as("minutes");
       agg.inMeeting += duration;
       if (event.isRecurring) {
         agg.inRecurringMeeting += duration;

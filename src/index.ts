@@ -12,10 +12,10 @@ async function main() {
   const tz = await cal.getTz();
   let startOfPrevWeek = DateTime.now()
     .setZone(tz)
-    .minus({ week: 4 })
+    .minus({ week: 1 })
     .startOf("week")
     .startOf("day");
-  let to = startOfPrevWeek.endOf("day").endOf("week").plus({ week: 4 });
+  let to = startOfPrevWeek.endOf("day").endOf("week").plus({ week: 1 });
   log.info(`Getting events from ${startOfPrevWeek} to ${to}`);
   const events = await cal.listEvents(startOfPrevWeek, to);
   let result = getFocusTime(startOfPrevWeek, to, events);

@@ -64,7 +64,7 @@ export class WrappedEvent {
     return `${this.summary} from ${start} to ${end} ${attendees}`;
   }
 
-  public getDurationTrucatedToDay(sod: DateTime, eod: DateTime) {
+  public getDurationTruncatedToDay(sod: DateTime, eod: DateTime) {
     let start = this.start;
     let end = this.finish;
     if (start < sod) {
