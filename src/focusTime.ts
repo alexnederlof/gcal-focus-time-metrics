@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { WrappedEvent } from "./WrappedEvents";
 
 export type Config = {
+  calenderId?: string;
   startOfDay: number;
   endOfDay: number;
   focusThresholdMinutes: number;

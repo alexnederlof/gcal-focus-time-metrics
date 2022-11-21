@@ -1,7 +1,7 @@
-import { Handler, Response } from "express";
+import { Handler, Request, Response } from "express";
 import fs from "fs/promises";
 import { Auth } from "googleapis";
-
+import jwt_decode, { JwtPayload } from "jwt-decode";
 interface ClientDetails {
   web: {
     client_id: string;
@@ -16,7 +16,11 @@ interface ClientDetails {
 }
 
 const COOKIE_NAME = "gt";
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+];
 export class GoogleAuth {
   constructor(public client: Auth.OAuth2Client) {}
 
@@ -42,12 +46,22 @@ export class GoogleAuth {
         return redirToGoogle(resp);
       } else {
         try {
-          console.debug("You are logged in with " + cookie);
+          console.debug("You are logged");
           let tokens = JSON.parse(cookie) as Auth.Credentials;
           if (new Date(tokens.expiry_date || 0) < new Date()) {
             return redirToGoogle(resp);
           }
           client.setCredentials(tokens);
+          if (tokens.id_token) {
+            try {
+              let decode: GoogleJwt = jwt_decode(tokens.id_token);
+              req.context.userToken = decode;
+              console.log(decode);
+            } catch (e) {
+              console.error("Could not parse ID token", e);
+            }
+          }
+          req.context.auth = client;
           next();
         } catch (e) {
           console.error("Could not set credentials" + e);
@@ -67,7 +81,7 @@ export class GoogleAuth {
 
   public handleLogOut(): Handler {
     return (req, resp) => {
-      console.log("Logging yout out");
+      console.log("Logging you out");
       resp.clearCookie(COOKIE_NAME).send("You are now logged out");
     };
   }
@@ -109,4 +123,14 @@ export class GoogleAuth {
       }
     };
   }
+}
+
+export type GoogleJwt = JwtPayload & {
+  email: string;
+  name: string;
+  picture?: string;
+  given_name?: string;
+};
+export function userFromContext(req: Request): GoogleJwt {
+  return req.context.userToken;
 }

@@ -1,11 +1,13 @@
 import React from "react";
+import { Nav, NavProps } from "./Nav";
 
 export interface Props {
   children: JSX.Element[] | JSX.Element;
   title?: string;
+  user: NavProps["user"];
 }
 
-export function Body({ children, title }: Props) {
+export function Body({ children, title, user }: Props) {
   return (
     <html lang="en">
       <head>
@@ -19,7 +21,8 @@ export function Body({ children, title }: Props) {
         />
         <title>{title || "Focus time"}</title>
       </head>
-      <body>
+      <body style={{ paddingTop: 56 }}>
+        <Nav user={user} />
         <div className="container">{children}</div>
       </body>
     </html>

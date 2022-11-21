@@ -435,6 +435,11 @@ execa@^4.0.0:
     signal-exit "^3.0.2"
     strip-final-newline "^2.0.0"
 
+express-request-context@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/express-request-context/-/express-request-context-1.0.1.tgz#b1828f945c2c7882de34900d8e8d3795241a566b"
+  integrity sha512-Fzjn7YVzeaCMzGwPmnq6dQQ5yOzmQktNihbSbl385BQo8AJu+QXZtYm7PJPqQotJfkOcTaYzIfzl6UIdBatTeQ==
+
 express@^4.18.2:
   version "4.18.2"
   resolved "https://registry.yarnpkg.com/express/-/express-4.18.2.tgz#3fabe08296e930c796c19e3c516979386ba9fd59"
@@ -709,6 +714,11 @@ jws@^4.0.0:
   dependencies:
     jwa "^2.0.0"
     safe-buffer "^5.0.1"
+
+jwt-decode@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/jwt-decode/-/jwt-decode-3.1.2.tgz#3fb319f3675a2df0c2895c8f5e9fa4b67b04ed59"
+  integrity sha512-UfpWE/VZn0iP50d8cz9NrZLM9lSWhcJ+0Gt/nm4by88UL+J1SiKN8/5dkjMmbEzwL2CAe+67GsegCbIKtbp75A==
 
 locate-path@^5.0.0:
   version "5.0.0"

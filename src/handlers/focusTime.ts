@@ -1,7 +1,7 @@
 import { Handler } from "express";
 import { DateTime } from "luxon";
 import ReactDOMServer from "react-dom/server";
-import { GoogleAuth } from "../auth";
+import { GoogleAuth, userFromContext } from "../auth";
 import { DEFAULT_CONFIG, getFocusTime } from "../focusTime";
 import { SimpleGcal } from "../gcal";
 import { FocusTimeResults } from "../layout/FocusTimeResults";
@@ -46,6 +46,9 @@ export function renderFocusTime(gAuth: GoogleAuth): Handler {
     if (params["focus-switch"]) {
       config.focusContextSwitchMinutes = Number(strParam("focus-switch"));
     }
+    if (params["cal-id"]) {
+      config.calenderId = strParam("cal-id");
+    }
     if (from > to) {
       return resp.send(`Error: ${from} > ${to}`);
     }
@@ -53,12 +56,13 @@ export function renderFocusTime(gAuth: GoogleAuth): Handler {
       return resp.send(`Error: too little switch tim for the focus window`);
     }
     console.info(`Getting events from ${from} to ${to}`);
-    const events = await cal.listEvents(from, to);
+    const events = await cal.listEvents(from, to, config.calenderId);
     let fullConfig = { ...config, from, to };
     let results = getFocusTime(events, fullConfig);
+    let user = userFromContext(req);
     resp.send(
       ReactDOMServer.renderToString(
-        FocusTimeResults({ results, config: fullConfig })
+        FocusTimeResults({ results, config: fullConfig, user })
       )
     );
   };

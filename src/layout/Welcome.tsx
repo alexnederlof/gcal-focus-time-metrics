@@ -1,14 +1,39 @@
 import { DateTime } from "luxon";
 import React from "react";
+import { SimpleCalendar } from "../gcal";
 import { Body } from "./Body";
+import { NavProps } from "./Nav";
 
-export function Welcome(props: {}) {
+export function Welcome(props: {
+  user: NavProps["user"];
+  calendars: SimpleCalendar[];
+}) {
   return (
-    <Body title="Welcome to calendar">
+    <Body title="Welcome to calendar" user={props.user}>
       <>
         <h1>Hey there</h1>
         <p>Let's analyze that focus time</p>
+
         <form action="/focus-time">
+          <div className="row">
+            <div className="col">
+              <label htmlFor="calId" className="col-form-label">
+                Which of your calendars
+              </label>
+              <select
+                className="form-select"
+                aria-label="Default select example"
+                id="calId"
+                name="cal-id"
+              >
+                {props.calendars.map((item) => (
+                  <option value={item.id} key={item.id} selected={item.primary}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="row">
             <div className="col">
               <label htmlFor="startDate" className="col-form-label">

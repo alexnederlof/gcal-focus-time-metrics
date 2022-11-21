@@ -3,6 +3,13 @@ import { calendar_v3, google } from "googleapis";
 import { Auth } from "googleapis";
 import { DateTime } from "luxon";
 
+export interface SimpleCalendar {
+  name: string;
+  hidden: boolean;
+  primary: boolean;
+  id: string;
+}
+
 export class SimpleGcal {
   private readonly gcal: calendar_v3.Calendar;
 
@@ -52,5 +59,27 @@ export class SimpleGcal {
       setting: "timezone",
     });
     return setting.value || undefined;
+  }
+
+  public async getCalendars(): Promise<SimpleCalendar[]> {
+    let results: SimpleCalendar[] = [];
+    let pageToken = undefined;
+    do {
+      const resp: GaxiosResponse<calendar_v3.Schema$CalendarList> =
+        await this.gcal.calendarList.list({
+          maxResults: 100,
+          pageToken,
+        });
+      pageToken = resp.data.nextPageToken;
+      (resp.data.items || []).forEach((item) =>
+        results.push({
+          id: item.id || "",
+          name: item.summary || "",
+          hidden: item.hidden || false,
+          primary: item.primary || false,
+        })
+      );
+    } while (pageToken);
+    return results;
   }
 }
