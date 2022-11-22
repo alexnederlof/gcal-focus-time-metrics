@@ -20,6 +20,7 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
+  "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
 ];
 export class GoogleAuth {
   constructor(
@@ -54,7 +55,6 @@ export class GoogleAuth {
     let cred = this.credFile;
     return (req, resp, next) => {
       let cookie = req.cookies[COOKIE_NAME];
-      console.log("Cookie " + cookie);
       if (!cookie) {
         console.debug("You are not logged in ");
         return redirToGoogle(resp);

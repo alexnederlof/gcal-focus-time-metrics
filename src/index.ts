@@ -1,9 +1,11 @@
 import cookies from "cookie-parser";
 import express from "express";
 import expressContext from "express-request-context";
+import { google } from "googleapis";
 import ReactDOMServer from "react-dom/server";
 import { GoogleAuth, userFromContext } from "./auth";
 import { SimpleGcal } from "./gcal";
+import { SimpleGroups } from "./gGroups";
 import { renderFocusTime } from "./handlers/focusTime";
 import { Welcome } from "./layout/Welcome";
 
@@ -20,7 +22,11 @@ async function server() {
   app.get("/", async (req, resp) => {
     let user = userFromContext(req);
     let cal = new SimpleGcal(gAuth.client);
+    let groupApi = new SimpleGroups(gAuth.client);
+    let groups = await groupApi.getMyGroups();
+    console.log(groups);
     let calendars = await cal.getCalendars();
+
     resp.send(
       ReactDOMServer.renderToString(
         Welcome({
