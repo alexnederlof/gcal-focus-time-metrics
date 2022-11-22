@@ -22,7 +22,10 @@ const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.profile",
 ];
 export class GoogleAuth {
-  constructor(public client: Auth.OAuth2Client) {}
+  constructor(
+    public client: Auth.OAuth2Client,
+    private credFile: ClientDetails["web"]
+  ) {}
 
   static async create() {
     let credentialsFile =
@@ -35,12 +38,14 @@ export class GoogleAuth {
       redi = web.redirect_uris.find((u) => !u.includes("localhost"));
     }
     return new GoogleAuth(
-      new Auth.OAuth2Client(web.client_id, web.client_secret, redi)
+      new Auth.OAuth2Client(web.client_id, web.client_secret, redi),
+      web
     );
   }
 
   public requireLogin(): Handler {
     let client = this.client;
+    let cred = this.credFile;
     return (req, resp, next) => {
       let cookie = req.cookies[COOKIE_NAME];
       console.log("Cookie " + cookie);
@@ -73,9 +78,11 @@ export class GoogleAuth {
       }
 
       function redirToGoogle(resp: Response) {
+        let to = cred.redirect_uris.find((u) => u.includes(req.hostname));
         let redir = client.generateAuthUrl({
           access_type: "offline",
           scope: SCOPES,
+          redirect_uri: to,
         });
         return resp.redirect(redir);
       }
