@@ -1,4 +1,4 @@
-FROM node:18-slim as builder
+FROM node:lts-slim as builder
 WORKDIR /app/
 ADD tsconfig.json /app/
 ADD package.json /app/
