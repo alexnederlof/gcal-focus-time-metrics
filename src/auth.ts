@@ -25,7 +25,10 @@ export class GoogleAuth {
   constructor(public client: Auth.OAuth2Client) {}
 
   static async create() {
-    let asText = await fs.readFile("secrets/credentials.server.json", "utf-8");
+    let credentialsFile =
+      process.env["GOOGLE_CREDENTIALS"] || "secrets/credentials.server.json";
+    console.log("Loading credentials from " + credentialsFile);
+    let asText = await fs.readFile(credentialsFile, "utf-8");
     let { web } = JSON.parse(asText) as ClientDetails;
     let redi = web.redirect_uris.find((u) => u.includes("localhost"));
     if (process.env["NODE_ENV"] === "prod") {
@@ -110,9 +113,9 @@ export class GoogleAuth {
           }
           res
             .cookie(COOKIE_NAME, JSON.stringify(tokens), {
-              httpOnly: process.env["NODE_ENV"] === "prod",
-              secure: process.env["NODE_ENV"] === "prod",
-              sameSite: process.env["NODE_ENV"] === "prod",
+              httpOnly: true,
+              secure: req.protocol === "https",
+              sameSite: req.protocol === "https",
               expires,
             })
             .redirect("/");

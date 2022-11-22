@@ -13,6 +13,7 @@ RUN rm -rf node_modules
 RUN yarn install --prod
 
 FROM node:lts-slim as runner
+ENV NODE_ENV prod
 USER 1000
 EXPOSE 3000
 WORKDIR /app/
