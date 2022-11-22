@@ -8,7 +8,6 @@ export function ProgressBar({ stats }: { stats: TotalFocusResult }) {
     inMeeting,
     inRecurringMeeting,
     inOneOnOne,
-    outOfOffice,
   } = stats;
   let remaininMeeting = inMeeting - inRecurringMeeting - inOneOnOne;
   let calcWidth = (thing: number) => {

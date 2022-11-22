@@ -14,6 +14,7 @@ async function server() {
   let gAuth = await GoogleAuth.create();
   app.get("/oauth/callback", gAuth.handleCallBack());
   app.get("/logout", gAuth.handleLogOut());
+  app.get("/_health", (_, res) => res.send("IMOK"));
   app.use(gAuth.requireLogin());
   app.get("/focus-time", renderFocusTime(gAuth));
   app.get("/", async (req, resp) => {
