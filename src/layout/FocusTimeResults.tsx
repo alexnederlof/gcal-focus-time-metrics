@@ -6,6 +6,7 @@ import { Config, FocusResult, TotalFocusResult } from "../focusTime";
 import { Body } from "./Body";
 import { DayView } from "./DayView";
 import { NavProps } from "./Nav";
+import { ProgressBar } from "./ProgressBar";
 
 export function FocusTimeResults({
   results,
@@ -16,7 +17,7 @@ export function FocusTimeResults({
   config: Config;
   user: NavProps["user"];
 }) {
-  let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
+  // let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
   const hr = (minutes: number) =>
     Duration.fromObject({ minutes })
       .rescale()
@@ -50,6 +51,9 @@ export function FocusTimeResults({
               </tr>
             </tbody>
           </table>
+        </section>
+        <section>
+          <ProgressBar stats={results} />
         </section>
         <section>
           <h1>Here's how it breaks down</h1>

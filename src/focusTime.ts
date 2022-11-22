@@ -28,6 +28,7 @@ export type FocusResult = {
   inRecurringMeeting: number;
   inOneOnOne: number;
   outOfOffice: number;
+  totalWorkTime: number;
 };
 
 export type PerDayFocusResult = FocusResult & { date: DateTime };
@@ -99,6 +100,7 @@ function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
       acc.inOfficeTime += next.inOfficeTime;
       acc.inOneOnOne += next.inOneOnOne;
       acc.outOfOffice += next.outOfOffice;
+      acc.totalWorkTime += next.totalWorkTime;
       return acc;
     },
     {
@@ -109,6 +111,7 @@ function getTotal(perDay: PerDayFocusResult[]): TotalFocusResult {
       inRecurringMeeting: 0,
       inOneOnOne: 0,
       outOfOffice: 0,
+      totalWorkTime: 0,
       perDay: [],
       events: [],
     } as TotalFocusResult
@@ -128,7 +131,11 @@ function getMeetingStats(
   eod: DateTime
 ): Pick<
   PerDayFocusResult,
-  "inMeeting" | "inRecurringMeeting" | "inOneOnOne" | "outOfOffice"
+  | "inMeeting"
+  | "inRecurringMeeting"
+  | "inOneOnOne"
+  | "outOfOffice"
+  | "totalWorkTime"
 > {
   console.info(
     "Today you have non-focus: ",
@@ -150,12 +157,18 @@ function getMeetingStats(
       }
       return agg;
     },
-    { inMeeting: 0, inRecurringMeeting: 0, inOneOnOne: 0, outOfOffice: 0 }
+    {
+      inMeeting: 0,
+      inRecurringMeeting: 0,
+      inOneOnOne: 0,
+      outOfOffice: 0,
+      totalWorkTime: 0,
+    }
   );
   console.info(
     `That's ${meetings.inMeeting} of meetings, of which ${meetings.inRecurringMeeting} recurring and ${meetings.inOneOnOne} 1-1`
   );
-  return meetings;
+  return { ...meetings, totalWorkTime: eod.diff(sod, "minutes").as("minutes") };
 }
 
 /**
