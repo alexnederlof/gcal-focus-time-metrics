@@ -33,7 +33,7 @@
     "google-auth-library": "^8.7.0",
     "googleapis": "109.0.1",
     "jwt-decode": "^3.1.2",
-    "luxon": "^3.1.0",
+    "luxon": "^3.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tsnodemon": "^1.2.2"
