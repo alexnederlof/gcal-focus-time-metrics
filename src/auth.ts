@@ -31,16 +31,22 @@ export class GoogleAuth {
     let credentialsFile =
       process.env["GOOGLE_CREDENTIALS"] || "secrets/credentials.server.json";
     console.log("Loading credentials from " + credentialsFile);
-    let asText = await fs.readFile(credentialsFile, "utf-8");
-    let { web } = JSON.parse(asText) as ClientDetails;
-    let redi = web.redirect_uris.find((u) => u.includes("localhost"));
-    if (process.env["NODE_ENV"] === "prod") {
-      redi = web.redirect_uris.find((u) => !u.includes("localhost"));
+    try {
+      let asText = await fs.readFile(credentialsFile, "utf-8");
+      let { web } = JSON.parse(asText) as ClientDetails;
+      let redi = web.redirect_uris.find((u) => u.includes("localhost"));
+      if (process.env["NODE_ENV"] === "prod") {
+        redi = web.redirect_uris.find((u) => !u.includes("localhost"));
+      }
+      return new GoogleAuth(
+        new Auth.OAuth2Client(web.client_id, web.client_secret, redi),
+        web
+      );
+    } catch (e) {
+      throw new Error(
+        "Could read client credentials from " + credentialsFile + ": " + e
+      );
     }
-    return new GoogleAuth(
-      new Auth.OAuth2Client(web.client_id, web.client_secret, redi),
-      web
-    );
   }
 
   public requireLogin(): Handler {
