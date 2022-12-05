@@ -25,9 +25,10 @@ export function Welcome(props: {
                 aria-label="Default select example"
                 id="calId"
                 name="cal-id"
+                defaultValue={props.calendars.find((i) => i.primary)?.id}
               >
                 {props.calendars.map((item) => (
-                  <option value={item.id} key={item.id} selected={item.primary}>
+                  <option value={item.id} key={item.id}>
                     {item.name}
                   </option>
                 ))}

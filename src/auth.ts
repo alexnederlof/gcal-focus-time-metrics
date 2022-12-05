@@ -21,6 +21,8 @@ const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+  "https://www.googleapis.com/auth/cloud-platform.read-only",
+  "https://www.googleapis.com/auth/cloudplatformorganizations.readonly",
 ];
 export class GoogleAuth {
   constructor(
@@ -66,11 +68,11 @@ export class GoogleAuth {
             return redirToGoogle(resp);
           }
           client.setCredentials(tokens);
+
           if (tokens.id_token) {
             try {
               let decode: GoogleJwt = jwt_decode(tokens.id_token);
               req.context.userToken = decode;
-              console.log(decode);
             } catch (e) {
               console.error("Could not parse ID token", e);
             }
