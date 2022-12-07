@@ -1,38 +1,27 @@
 import { DateTime } from "luxon";
 import React from "react";
-import { SimpleCalendar } from "../gcal";
 import { Body } from "./Body";
 import { NavProps } from "./Nav";
 
-export function Welcome(props: {
-  user: NavProps["user"];
-  calendars: SimpleCalendar[];
-}) {
+export function Welcome(props: { user: NavProps["user"]; userEmail: string }) {
   return (
     <Body title="Welcome to calendar" user={props.user}>
       <>
         <h1>Hey there</h1>
         <p>Let's analyze that focus time</p>
-
         <form action="/focus-time">
           <div className="row">
             <div className="col">
-              <label htmlFor="calId" className="col-form-label">
-                Which of your calendars
+              <label htmlFor="email" className="col-form-label">
+                Enter the group mail, or leave blank for your own calendar
               </label>
-              <select
-                className="form-select"
-                aria-label="Default select example"
-                id="calId"
-                name="cal-id"
-                defaultValue={props.calendars.find((i) => i.primary)?.id}
-              >
-                {props.calendars.map((item) => (
-                  <option value={item.id} key={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="form-control"
+                defaultValue={props.userEmail}
+              />
             </div>
           </div>
           <div className="row">

@@ -21,8 +21,8 @@ const SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
-  "https://www.googleapis.com/auth/cloud-platform.read-only",
-  "https://www.googleapis.com/auth/cloudplatformorganizations.readonly",
+  // "https://www.googleapis.com/auth/cloud-platform.read-only",
+  // "https://www.googleapis.com/auth/cloudplatformorganizations.readonly",
 ];
 export class GoogleAuth {
   constructor(
@@ -151,4 +151,8 @@ export type GoogleJwt = JwtPayload & {
 };
 export function userFromContext(req: Request): GoogleJwt {
   return req.context.userToken;
+}
+
+export function logOutRequest(response: Response): Response {
+  return response.clearCookie(COOKIE_NAME);
 }

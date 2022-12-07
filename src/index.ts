@@ -1,15 +1,16 @@
 import cookies from "cookie-parser";
+import { config } from "dotenv";
 import express from "express";
 import expressContext from "express-request-context";
-import { google } from "googleapis";
 import ReactDOMServer from "react-dom/server";
 import { GoogleAuth, userFromContext } from "./auth";
-import { SimpleGcal } from "./gcal";
-import { SimpleGroups } from "./gGroups";
+import { ErrorHandler } from "./errors";
 import { renderFocusTime } from "./handlers/focusTime";
 import { Welcome } from "./layout/Welcome";
 
 async function server() {
+  checkConfig();
+
   const app = express();
   app.use(cookies());
   app.use(expressContext());
@@ -19,23 +20,23 @@ async function server() {
   app.get("/_health", (_, res) => res.send("IMOK"));
   app.use(gAuth.requireLogin());
   app.get("/focus-time", renderFocusTime(gAuth));
-  app.get("/", async (req, resp) => {
-    let user = userFromContext(req);
-    let cal = new SimpleGcal(gAuth.client);
-    let groupApi = new SimpleGroups(gAuth.client);
-    let groups = await groupApi.getMyGroups();
-    console.log(groups);
-    let calendars = await cal.getCalendars();
-
-    resp.send(
-      ReactDOMServer.renderToString(
-        Welcome({
-          user: { name: user.given_name || user.name, picture: user.picture },
-          calendars,
-        })
-      )
-    );
+  app.get("/", async (req, resp, next) => {
+    try {
+      let user = userFromContext(req);
+      resp.send(
+        ReactDOMServer.renderToString(
+          Welcome({
+            user: { name: user.given_name || user.name, picture: user.picture },
+            userEmail: user.email,
+          })
+        )
+      );
+    } catch (e) {
+      next(e);
+    }
   });
+
+  app.use(ErrorHandler);
 
   let port = Number(process.env["NODE_PORT"] || 3000);
   let server = app.listen(port, () =>
@@ -45,6 +46,13 @@ async function server() {
   process.on("SIGINT", server.close);
   process.on("SIGTERM", server.close);
   process.on("SIGHUP", server.close);
+}
+
+function checkConfig() {
+  config();
+  if (!process.env["GOOGLE_CUSTOMER_ID"]?.startsWith("C")) {
+    throw Error("Please configure your GOOGLE_CUSTOMER_ID");
+  }
 }
 
 server().catch((e) => {

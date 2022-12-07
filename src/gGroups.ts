@@ -1,33 +1,92 @@
-import { Auth, cloudidentity_v1, google, people_v1 } from "googleapis";
+import { GaxiosError, GaxiosResponse } from "gaxios";
+import { Auth, cloudidentity_v1, google } from "googleapis";
+
+export type SimpleGroup = Pick<
+  cloudidentity_v1.Schema$Group,
+  "name" | "parent" | "description" | "displayName" | "labels"
+> & { id: string };
+
+export type SimpleMember = {
+  memberName: string;
+  groupName: string;
+  email: string;
+  relationShip: string;
+};
+
+let cachedGroups: Promise<SimpleGroup[]> | null = null;
 
 export class SimpleGroups {
-  ident: cloudidentity_v1.Cloudidentity;
-  orgs: people_v1.People;
+  private ident: cloudidentity_v1.Cloudidentity;
 
   constructor(auth: Auth.OAuth2Client) {
     this.ident = google.cloudidentity({ version: "v1", auth });
-    this.orgs = google.people("v1");
+    if (!cachedGroups) {
+      cachedGroups = this.getAllGroups();
+    }
   }
 
-  public async getMyGroups() {
-    console.log("Getting groups");
-    const parent = await this.ident.groups.get({
-      name: "groups/technology@flexport.com",
-    });
-    console.log("Parent " + parent.data);
-
-    const { data } =
-      await this.ident.groups.memberships.searchTransitiveMemberships({
-        parent: "group/amsteam",
-      });
-    console.log("Context", data);
-
+  public async getMembersFor(groupEmail: string) {
+    console.log("Getting group members for " + groupEmail);
+    let pageToken = undefined;
+    let members: SimpleMember[] = [];
+    let groupName: string;
     try {
-      const rep = await this.ident.groups.search({});
-      console.log("list is ", rep.data);
-      return "Yo";
-    } catch (e) {
-      console.error("" + e);
+      let group = await this.ident.groups.lookup({
+        "groupKey.id": groupEmail,
+      });
+      groupName = group.data.name!;
+    } catch (e: any) {
+      if (e instanceof GaxiosError && e.response?.status === 403) {
+        // 403 weirdly means it's not found
+        return null;
+      }
+
+      throw e;
     }
+    do {
+      let resp: GaxiosResponse<cloudidentity_v1.Schema$SearchTransitiveMembershipsResponse> =
+        await this.ident.groups.memberships.searchTransitiveMemberships({
+          parent: groupName,
+          pageSize: 100,
+          pageToken,
+        });
+      pageToken = resp.data.nextPageToken;
+      resp.data.memberships?.forEach((m) =>
+        members.push({
+          groupName: groupName,
+          memberName: m.member!,
+          email: m.preferredMemberKey![0]!.id!,
+          relationShip: m.relationType!,
+        })
+      );
+    } while (pageToken);
+    console.log(`Found ${members.length} for ${groupEmail}`);
+    return members;
+  }
+
+  public async getAllGroups() {
+    if (cachedGroups) {
+      return cachedGroups;
+    }
+    console.log("Getting groups");
+    let pageToken = undefined;
+    let groups: SimpleGroup[] = [];
+    do {
+      let resp: GaxiosResponse<cloudidentity_v1.Schema$ListGroupsResponse> =
+        await this.ident.groups.list({
+          parent: `customers/${process.env["GOOGLE_CUSTOMER_ID"]}`,
+          pageSize: 100,
+          pageToken,
+        });
+      pageToken = resp.data.nextPageToken;
+      resp.data.groups?.forEach((g) =>
+        groups.push({
+          name: g.name,
+          displayName: g.displayName,
+          id: g.groupKey!.id!,
+        })
+      );
+    } while (pageToken);
+    return groups;
   }
 }
