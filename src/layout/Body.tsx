@@ -1,5 +1,5 @@
 import React from "react";
-import { Nav, NavProps } from "./Nav";
+import { Nav, NavProps } from "./Nav.js";
 
 export interface Props {
   children: JSX.Element[] | JSX.Element;

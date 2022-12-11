@@ -1,6 +1,6 @@
 import React from "react";
-import { Body } from "./Body";
-import { NavProps } from "./Nav";
+import { Body } from "./Body.js";
+import { NavProps } from "./Nav.js";
 
 export function ErrorView({
   error,

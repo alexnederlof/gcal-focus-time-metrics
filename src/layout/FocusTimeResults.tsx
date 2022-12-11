@@ -1,12 +1,10 @@
-import { gamesConfiguration } from "googleapis/build/src/apis/gamesConfiguration";
 import { Duration } from "luxon";
-import { config } from "process";
 import React from "react";
-import { Config, FocusResult, TotalFocusResult } from "../focusTime";
-import { Body } from "./Body";
-import { DayView } from "./DayView";
-import { NavProps } from "./Nav";
-import { ProgressBar } from "./ProgressBar";
+import { Config, FocusResult, TotalFocusResult } from "../focusTime.js";
+import { Body } from "./Body.js";
+import { DayView } from "./DayView.js";
+import { NavProps } from "./Nav.js";
+import { ProgressBar } from "./ProgressBar.js";
 
 export function FocusTimeResults({
   results,

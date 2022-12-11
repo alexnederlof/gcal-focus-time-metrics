@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { GaxiosError } from "gaxios";
 import ReactDOMServer from "react-dom/server";
-import { logOutRequest, userFromContext } from "./auth";
-import { ErrorView } from "./layout/ErrorView";
+import { logOutRequest, userFromContext } from "./auth.js";
+import { ErrorView } from "./layout/ErrorView.js";
 
 export class GcalError extends Error {
   constructor(
@@ -18,7 +18,7 @@ export function ErrorHandler(
   error: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
   console.log("ERror handler triggered");
   let user = userFromContext(req);

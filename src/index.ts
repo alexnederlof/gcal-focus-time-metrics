@@ -3,17 +3,17 @@ import { config } from "dotenv";
 import express from "express";
 import expressContext from "express-request-context";
 import ReactDOMServer from "react-dom/server";
-import { GoogleAuth, userFromContext } from "./auth";
-import { ErrorHandler } from "./errors";
-import { renderFocusTime } from "./handlers/focusTime";
-import { Welcome } from "./layout/Welcome";
+import { GoogleAuth, userFromContext } from "./auth.js";
+import { ErrorHandler } from "./errors.js";
+import { renderFocusTime } from "./handlers/focusTime.js";
+import { Welcome } from "./layout/Welcome.js";
 
 async function server() {
   checkConfig();
 
   const app = express();
   app.use(cookies());
-  app.use(expressContext());
+  app.use(expressContext.default());
   let gAuth = await GoogleAuth.create();
   app.get("/oauth/callback", gAuth.handleCallBack());
   app.get("/logout", gAuth.handleLogOut());

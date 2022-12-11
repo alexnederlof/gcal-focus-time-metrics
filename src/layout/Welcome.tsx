@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import React from "react";
-import { Body } from "./Body";
-import { NavProps } from "./Nav";
+import { Body } from "./Body.js";
+import { NavProps } from "./Nav.js";
 
 export function Welcome(props: { user: NavProps["user"]; userEmail: string }) {
   return (

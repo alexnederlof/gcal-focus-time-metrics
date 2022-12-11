@@ -2,11 +2,15 @@
   "name": "gcal-focus-time-metrics",
   "version": "1.0.0",
   "description": "Measure productivity time through google calendar",
-  "main": "index.js",
+  "exports": "./index.js",
   "repository": "git@github.com:alexnederlof/gcal-focus-time-metrics.git",
   "author": "Alex Nederlof <alex@nederlof.com>",
   "license": "MIT",
   "private": false,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "go": "ts-node src/index.ts",
     "prepare": "husky install",
@@ -35,6 +39,7 @@
     "googleapis": "109.0.1",
     "jwt-decode": "^3.1.2",
     "luxon": "^3.1.1",
+    "p-limit": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tsnodemon": "^1.2.2"

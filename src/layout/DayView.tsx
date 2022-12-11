@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import React from "react";
-import { PerDayFocusResult } from "../focusTime";
+import { PerDayFocusResult } from "../focusTime.js";
 
 interface EventSummary {
   title: string;

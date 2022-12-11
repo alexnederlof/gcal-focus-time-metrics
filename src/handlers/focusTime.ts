@@ -1,13 +1,20 @@
-import { Handler, Request } from "express";
+import { Handler, Request, Response } from "express";
 import { DateTime } from "luxon";
-import { nextTick } from "process";
+import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
-import { GoogleAuth, userFromContext } from "../auth";
-import { GcalError } from "../errors";
-import { Config, DEFAULT_CONFIG, getFocusTime } from "../focusTime";
-import { SimpleGcal } from "../gcal";
-import { SimpleGroups, SimpleMember } from "../gGroups";
-import { FocusTimeResults } from "../layout/FocusTimeResults";
+import { GoogleAuth, userFromContext } from "../auth.js";
+import { GcalError } from "../errors.js";
+import { SimpleGcal } from "../gcal.js";
+import { SimpleGroups, SimpleMember } from "../gGroups.js";
+import { FocusTimeResults } from "../layout/FocusTimeResults.js";
+import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
+
+import {
+  Config,
+  DEFAULT_CONFIG,
+  getFocusTime,
+  TotalFocusResult,
+} from "../focusTime.js";
 
 export function renderFocusTime(gAuth: GoogleAuth): Handler {
   return async (req, resp, next) => {
@@ -21,27 +28,85 @@ export function renderFocusTime(gAuth: GoogleAuth): Handler {
       );
 
       if (personal) {
-        console.info(`Getting events from ${config.from} to ${config.to} for `);
-        config.calenderId = personal;
-        const events = await cal.listEvents(
-          config.from,
-          config.to,
-          config.calenderId
-        );
-        let results = getFocusTime(events, config);
-        let user = userFromContext(req);
-        resp.send(
-          ReactDOMServer.renderToString(
-            FocusTimeResults({ results, config: config, user })
-          )
-        );
+        await renderPersonalFocus(config, personal, cal, req, resp);
       } else {
-        throw new GcalError(401, "cannot deal with groups yet");
+        await renderGroupFocus(config, config.email, members!, cal, req, resp);
       }
     } catch (e) {
       next(e);
     }
   };
+}
+
+async function renderPersonalFocus(
+  config: Config & { email: string },
+  personal: string,
+  cal: SimpleGcal,
+  req: Request,
+  resp: Response
+) {
+  console.info(`Getting events from ${config.from} to ${config.to} for `);
+  config.calenderId = personal;
+  const events = await cal.listEvents(
+    config.from,
+    config.to,
+    config.calenderId
+  );
+  let results = getFocusTime(events, config);
+  let user = userFromContext(req);
+  resp.send(
+    ReactDOMServer.renderToString(
+      FocusTimeResults({ results, config: config, user })
+    )
+  );
+}
+
+export interface GroupFocusResult {
+  [key: string]: TotalFocusResult | null;
+}
+
+async function renderGroupFocus(
+  config: Config,
+  groupName: string,
+  members: SimpleMember[],
+  cal: SimpleGcal,
+  req: Request,
+  resp: Response
+) {
+  console.info(`Getting events from ${config.from} to ${config.to} for `);
+  let limit = pLimit(Number(process.env["GOOGLE_CONCURRENT_REQS"] || "5"));
+  const groupResult: GroupFocusResult = Object.fromEntries(
+    await Promise.all(
+      members.map((member) => {
+        let subConfig = { ...config, calenderId: member.email };
+        return limit(async () => {
+          console.info(`Getting focus time for ${member.email}`);
+          try {
+            const events = await cal.listEvents(
+              subConfig.from,
+              subConfig.to,
+              subConfig.calenderId
+            );
+            let results = getFocusTime(events, subConfig);
+            return [member.email, results];
+          } catch (e) {
+            return [member.email, null];
+          }
+        });
+      })
+    )
+  );
+  let user = userFromContext(req);
+  resp.send(
+    ReactDOMServer.renderToString(
+      GroupFocusTimeResults({
+        results: groupResult,
+        config: config,
+        user,
+        groupName,
+      })
+    )
+  );
 }
 
 export async function resolveEmail(

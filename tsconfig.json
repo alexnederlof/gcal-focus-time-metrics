@@ -1,6 +1,9 @@
 {
   "extends": "@tsconfig/node18/tsconfig.json",
+
   "compilerOptions": {
+    "module": "node16",
+    "moduleResolution": "node16",
     "preserveConstEnums": true,
     "sourceMap": true,
     "outDir": "build",

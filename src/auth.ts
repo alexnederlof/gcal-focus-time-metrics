@@ -71,7 +71,7 @@ export class GoogleAuth {
 
           if (tokens.id_token) {
             try {
-              let decode: GoogleJwt = jwt_decode(tokens.id_token);
+              let decode: GoogleJwt = jwt_decode.default(tokens.id_token);
               req.context.userToken = decode;
             } catch (e) {
               console.error("Could not parse ID token", e);

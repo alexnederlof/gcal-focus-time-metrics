@@ -1,6 +1,6 @@
 import { calendar_v3 } from "googleapis";
 import { DateTime } from "luxon";
-import { WrappedEvent } from "./WrappedEvents";
+import { WrappedEvent } from "./WrappedEvents.js";
 
 export type Config = {
   calenderId?: string;

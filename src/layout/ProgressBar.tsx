@@ -1,5 +1,5 @@
 import React from "react";
-import { TotalFocusResult } from "../focusTime";
+import { TotalFocusResult } from "../focusTime.js";
 
 export function ProgressBar({ stats }: { stats: TotalFocusResult }) {
   const {
