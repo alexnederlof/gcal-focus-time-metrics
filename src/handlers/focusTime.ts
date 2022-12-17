@@ -47,6 +47,12 @@ async function renderPersonalFocus(
 ) {
   log.info(`Getting events from ${config.from} to ${config.to} for `);
   config.email = personal;
+  const calendar = await cal.getCalendar(personal);
+  log.info(`Set zone to ${calendar.timeZone}`);
+  config.from = config.from.setZone(calendar.timeZone!, {
+    keepLocalTime: true,
+  });
+  config.to = config.to.setZone(calendar.timeZone!, { keepLocalTime: true });
   const events = await cal.listEvents(config.from, config.to, config.email);
   let results = getFocusTime(events, config);
   let user = userFromContext(req);
@@ -77,11 +83,16 @@ async function renderGroupFocus(
         return limit(async () => {
           log.info(`Getting focus time for ${member.email}`);
           const calendar = await cal.getCalendar(member.email);
+          log.info(`Set zone to ${calendar.timeZone}`);
           let subConfig = {
             ...config,
             calenderId: member.email,
-            // from: config.from.setZone(calendar.timeZone!),
-            // to: config.from.setZone(calendar.timeZone!),
+            from: config.from.setZone(calendar.timeZone!, {
+              keepLocalTime: true,
+            }),
+            to: config.to.setZone(calendar.timeZone!, {
+              keepLocalTime: true,
+            }),
           };
           try {
             const events = await cal.listEvents(

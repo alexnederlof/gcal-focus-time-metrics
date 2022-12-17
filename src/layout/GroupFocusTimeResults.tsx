@@ -21,27 +21,28 @@ export function GroupFocusTimeResults({
   searchParams: URLSearchParams;
 }) {
   // let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
-
+  let groupNameShort = groupName.substring(0, groupName.indexOf("@"));
   const userUrl = (email: string) => {
     const search = new URLSearchParams(searchParams);
     search.set("email", email);
     return "/focus-time?" + search.toString();
   };
 
-  let sorted = Object.entries(results);
+  let sorted = Object.entries(results).filter((i) => i[1]!.totalWorkTime > 8);
   sorted.sort((one, other) => one[0].localeCompare(other[0])); // sort by email
   let totals = getTotals(sorted);
 
   return (
-    <Body title={`Result for group ${groupName}`} user={user}>
+    <Body title={`Result for group ${groupNameShort}`} user={user}>
       <>
         <section>
-          <h1>Here's the focus time for {groupName}</h1>
+          <h1>Here's the focus time for {groupNameShort}</h1>
           <p>
             From {config.from.toLocaleString()} to {config.to.toLocaleString()}{" "}
             for {config.email} this group had {printHours(totals.focusTime.net)}{" "}
             of total focus time. That's{" "}
-            {printPercent(totals.focusTime.averagePercent)} of their time.
+            {printPercent(totals.focusTime.averagePercent)} of their time on
+            average.
           </p>
           <table className="table">
             <thead>

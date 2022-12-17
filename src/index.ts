@@ -2,12 +2,12 @@ import cookies from "cookie-parser";
 import { config } from "dotenv";
 import express from "express";
 import expressContext from "express-request-context";
+import log, { LogLevelDesc } from "loglevel";
 import ReactDOMServer from "react-dom/server";
 import { ErrorHandler } from "./errors.js";
 import { GoogleAuth, userFromContext } from "./google_api/auth.js";
 import { renderFocusTime } from "./handlers/focusTime.js";
 import { Welcome } from "./layout/Welcome.js";
-import log, { LogLevelDesc } from "loglevel";
 
 async function server() {
   checkConfig();
@@ -55,7 +55,7 @@ function checkConfig() {
   if (!process.env["GOOGLE_CUSTOMER_ID"]?.startsWith("C")) {
     throw Error("Please configure your GOOGLE_CUSTOMER_ID");
   }
-  log.setLevel((process.env["LOG_LEVEL"] || "info") as LogLevelDesc);
+  log.setLevel((process.env["LOG_LEVEL"] || "debug") as LogLevelDesc);
 }
 
 server().catch((e) => {

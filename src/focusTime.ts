@@ -55,7 +55,7 @@ export function getFocusTime(
     }
 
     let eod = today.set({ hour: config.endOfDay });
-    log.debug(`Checking ${today} to ${eod}`);
+    log.debug(`Checking ${today.toISO()} to ${eod}`);
     // Ideally you drop the events you've already seen, but meh.
     // You can't go left-to-right because some events span multiple days
     // So you have to re-query every time what is relevant for this day.

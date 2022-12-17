@@ -56,7 +56,7 @@ function OneDay(
       <td>
         {day.date.weekdayLong}
         <br />
-        {day.date.toLocaleString()}
+        {day.date.toLocaleString()} in {day.date.zoneName}
       </td>
       <td>
         <p>
@@ -72,7 +72,8 @@ function OneDay(
       <td>
         {events.map(({ title, start, finish, original, focusMinutes }, i) => (
           <span key={i}>
-            {start.toFormat("HH:mm")} - {finish.toFormat("HH:mm")}:{" "}
+            {start.setZone(day.date.zoneName).toFormat("HH:mm")} -{" "}
+            {finish.setZone(day.date.zoneName).toFormat("HH:mm")}:{" "}
             {focusMinutes ? (
               <span className="badge text-bg-success">
                 {hr(focusMinutes)} of focus

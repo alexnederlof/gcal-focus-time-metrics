@@ -1,4 +1,3 @@
-import { Duration } from "luxon";
 import React from "react";
 import { Config, TotalFocusResult } from "../focusTime.js";
 import { Body } from "./Body.js";
@@ -16,11 +15,12 @@ export function FocusTimeResults({
   config: Config;
   user: NavProps["user"];
 }) {
+  const shortName = config.email.substring(0, config.email.indexOf("@"));
   return (
-    <Body title="Result for you" user={user}>
+    <Body title={`Focus of ${shortName}`} user={user}>
       <>
         <section>
-          <h1>Here's your focus time</h1>
+          <h1>Focus time of {shortName}</h1>
           <p>
             From {config.from.toLocaleString()} to {config.to.toLocaleString()}{" "}
             for {config.email}

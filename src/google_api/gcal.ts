@@ -3,6 +3,7 @@ import { calendar_v3, google } from "googleapis";
 import { Auth } from "googleapis";
 import log from "loglevel";
 import { DateTime } from "luxon";
+
 export interface SimpleCalendar {
   name: string;
   hidden: boolean;
