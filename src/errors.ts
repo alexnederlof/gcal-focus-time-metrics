@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { GaxiosError } from "gaxios";
 import ReactDOMServer from "react-dom/server";
-import { logOutRequest, userFromContext } from "./auth.js";
+import { logOutRequest, userFromContext } from "./google_api/auth.js";
 import { ErrorView } from "./layout/ErrorView.js";
 
 export class GcalError extends Error {

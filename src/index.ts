@@ -3,8 +3,8 @@ import { config } from "dotenv";
 import express from "express";
 import expressContext from "express-request-context";
 import ReactDOMServer from "react-dom/server";
-import { GoogleAuth, userFromContext } from "./auth.js";
 import { ErrorHandler } from "./errors.js";
+import { GoogleAuth, userFromContext } from "./google_api/auth.js";
 import { renderFocusTime } from "./handlers/focusTime.js";
 import { Welcome } from "./layout/Welcome.js";
 

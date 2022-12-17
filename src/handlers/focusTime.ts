@@ -2,10 +2,10 @@ import { Handler, Request, Response } from "express";
 import { DateTime } from "luxon";
 import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
-import { GoogleAuth, userFromContext } from "../auth.js";
 import { GcalError } from "../errors.js";
 import { SimpleGcal } from "../gcal.js";
 import { SimpleGroups, SimpleMember } from "../gGroups.js";
+import { GoogleAuth, userFromContext } from "../google_api/auth.js";
 import { FocusTimeResults } from "../layout/FocusTimeResults.js";
 import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
 

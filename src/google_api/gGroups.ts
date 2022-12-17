@@ -61,6 +61,7 @@ export class SimpleGroups {
       );
     } while (pageToken);
     console.log(`Found ${members.length} for ${groupEmail}`);
+    members.forEach((m) => m.memberName);
     return members;
   }
 
