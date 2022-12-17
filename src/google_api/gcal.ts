@@ -1,8 +1,8 @@
 import { GaxiosResponse } from "gaxios";
 import { calendar_v3, google } from "googleapis";
 import { Auth } from "googleapis";
+import log from "loglevel";
 import { DateTime } from "luxon";
-
 export interface SimpleCalendar {
   name: string;
   hidden: boolean;
@@ -41,7 +41,7 @@ export class SimpleGcal {
         });
       let events = resp.data;
       if (events.items) {
-        console.info(
+        log.debug(
           `Found ${events.items.length} more events. Collected ${events.items.length}`
         );
         collected.push(...events.items);

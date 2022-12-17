@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { GaxiosError } from "gaxios";
+import log from "loglevel";
 import ReactDOMServer from "react-dom/server";
 import { logOutRequest, userFromContext } from "./google_api/auth.js";
 import { ErrorView } from "./layout/ErrorView.js";
-
 export class GcalError extends Error {
   constructor(
     public status: number,
@@ -20,14 +20,14 @@ export function ErrorHandler(
   res: Response,
   _next: NextFunction
 ) {
-  console.log("ERror handler triggered");
+  log.info("ERror handler triggered");
   let user = userFromContext(req);
   let code = 500;
   if (error.message.includes("no refresh token")) {
     return logOutRequest(res).redirect("/");
   }
   if (error instanceof GcalError) {
-    console.error(error.message, error.cause);
+    log.error(error.message, error.cause);
     code = error.status;
   }
   if (error instanceof GaxiosError) {
@@ -36,7 +36,7 @@ export function ErrorHandler(
       .status(500)
       .send(ReactDOMServer.renderToString(ErrorView({ error: e, user })));
   } else {
-    console.error(error.message, error.cause);
+    log.error(error.message, error.cause);
   }
   return res
     .status(code)

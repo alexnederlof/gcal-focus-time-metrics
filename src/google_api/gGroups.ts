@@ -1,6 +1,6 @@
 import { GaxiosError, GaxiosResponse } from "gaxios";
 import { Auth, cloudidentity_v1, google } from "googleapis";
-
+import log from "loglevel";
 export type SimpleGroup = Pick<
   cloudidentity_v1.Schema$Group,
   "name" | "parent" | "description" | "displayName" | "labels"
@@ -26,7 +26,7 @@ export class SimpleGroups {
   }
 
   public async getMembersFor(groupEmail: string) {
-    console.log("Getting group members for " + groupEmail);
+    log.info("Getting group members for " + groupEmail);
     let pageToken = undefined;
     let members: SimpleMember[] = [];
     let groupName: string;
@@ -51,17 +51,18 @@ export class SimpleGroups {
           pageToken,
         });
       pageToken = resp.data.nextPageToken;
-      resp.data.memberships?.forEach((m) =>
-        members.push({
-          groupName: groupName,
-          memberName: m.member!,
-          email: m.preferredMemberKey![0]!.id!,
-          relationShip: m.relationType!,
-        })
-      );
+      resp.data.memberships
+        ?.filter((m) => m.member?.startsWith("users/"))
+        .forEach((m) =>
+          members.push({
+            groupName: groupName,
+            memberName: m.member!,
+            email: m.preferredMemberKey![0]!.id!,
+            relationShip: m.relationType!,
+          })
+        );
     } while (pageToken);
-    console.log(`Found ${members.length} for ${groupEmail}`);
-    members.forEach((m) => m.memberName);
+    members.forEach((m) => log.info(m.memberName));
     return members;
   }
 
@@ -69,7 +70,7 @@ export class SimpleGroups {
     if (cachedGroups) {
       return cachedGroups;
     }
-    console.log("Getting groups");
+    log.info("Getting groups");
     let pageToken = undefined;
     let groups: SimpleGroup[] = [];
     do {

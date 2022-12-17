@@ -1,14 +1,14 @@
 import { Handler, Request, Response } from "express";
+import log from "loglevel";
 import { DateTime } from "luxon";
 import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
 import { GcalError } from "../errors.js";
-import { SimpleGcal } from "../gcal.js";
-import { SimpleGroups, SimpleMember } from "../gGroups.js";
 import { GoogleAuth, userFromContext } from "../google_api/auth.js";
+import { SimpleGcal } from "../google_api/gcal.js";
+import { SimpleGroups, SimpleMember } from "../google_api/gGroups.js";
 import { FocusTimeResults } from "../layout/FocusTimeResults.js";
 import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
-
 import {
   Config,
   DEFAULT_CONFIG,
@@ -45,7 +45,7 @@ async function renderPersonalFocus(
   req: Request,
   resp: Response
 ) {
-  console.info(`Getting events from ${config.from} to ${config.to} for `);
+  log.info(`Getting events from ${config.from} to ${config.to} for `);
   config.calenderId = personal;
   const events = await cal.listEvents(
     config.from,
@@ -73,14 +73,14 @@ async function renderGroupFocus(
   req: Request,
   resp: Response
 ) {
-  console.info(`Getting events from ${config.from} to ${config.to} for `);
+  log.info(`Getting events from ${config.from} to ${config.to} for `);
   let limit = pLimit(Number(process.env["GOOGLE_CONCURRENT_REQS"] || "5"));
   const groupResult: GroupFocusResult = Object.fromEntries(
     await Promise.all(
       members.map((member) => {
         let subConfig = { ...config, calenderId: member.email };
         return limit(async () => {
-          console.info(`Getting focus time for ${member.email}`);
+          log.info(`Getting focus time for ${member.email}`);
           try {
             const events = await cal.listEvents(
               subConfig.from,
@@ -131,8 +131,6 @@ function parseConfig(
     }
     return val as string | null | undefined;
   };
-  console.log("params", params);
-
   if (params["analyse-start"]) {
     from = DateTime.fromFormat(
       strParam("analyse-start")!,
@@ -178,9 +176,4 @@ function parseConfig(
     to,
     ...config,
   };
-}
-
-async function getMembers(api: SimpleGroups, groupEmail: string) {
-  let members = await api.getMembersFor(groupEmail);
-  console.log(members);
 }

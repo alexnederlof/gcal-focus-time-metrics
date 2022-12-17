@@ -2,6 +2,7 @@ import cookies from "cookie-parser";
 import { config } from "dotenv";
 import express from "express";
 import expressContext from "express-request-context";
+import log from "loglevel";
 import ReactDOMServer from "react-dom/server";
 import { ErrorHandler } from "./errors.js";
 import { GoogleAuth, userFromContext } from "./google_api/auth.js";
@@ -40,7 +41,7 @@ async function server() {
 
   let port = Number(process.env["NODE_PORT"] || 3000);
   let server = app.listen(port, () =>
-    console.log(`Started @ http://localhost:${port}`)
+    log.info(`Started @ http://localhost:${port}`)
   );
 
   process.on("SIGINT", server.close);
@@ -53,9 +54,10 @@ function checkConfig() {
   if (!process.env["GOOGLE_CUSTOMER_ID"]?.startsWith("C")) {
     throw Error("Please configure your GOOGLE_CUSTOMER_ID");
   }
+  log.setLevel(process.env["LOG_LEVEL"] || "info");
 }
 
 server().catch((e) => {
-  console.error(e);
+  log.error(e);
   process.exit(1);
 });

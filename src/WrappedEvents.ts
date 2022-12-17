@@ -1,6 +1,6 @@
 import { calendar_v3 } from "googleapis";
+import log from "loglevel";
 import { DateTime } from "luxon";
-
 export type InviteResponse =
   | "needsAction"
   | "declined"
@@ -77,13 +77,13 @@ export class WrappedEvent {
     let start = this.start;
     let end = this.finish;
     if (start < sod) {
-      console.info(
+      log.info(
         `${this.summary} started before SOD at ${this.start}. Truncating`
       );
       start = sod;
     }
     if (end > eod) {
-      console.info(`${this.summary} ended after EOD at ${end}. Truncating`);
+      log.info(`${this.summary} ended after EOD at ${end}. Truncating`);
       end = eod;
     }
     return end.diff(start); // .as("minutes") / 60.0

@@ -2,6 +2,8 @@ import { Handler, Request, Response } from "express";
 import fs from "fs/promises";
 import { Auth } from "googleapis";
 import jwt_decode, { JwtPayload } from "jwt-decode";
+import log from "loglevel";
+
 interface ClientDetails {
   web: {
     client_id: string;
@@ -33,7 +35,7 @@ export class GoogleAuth {
   static async create() {
     let credentialsFile =
       process.env["GOOGLE_CREDENTIALS"] || "secrets/credentials.server.json";
-    console.log("Loading credentials from " + credentialsFile);
+    log.info("Loading credentials from " + credentialsFile);
     try {
       let asText = await fs.readFile(credentialsFile, "utf-8");
       let { web } = JSON.parse(asText) as ClientDetails;
@@ -58,11 +60,11 @@ export class GoogleAuth {
     return (req, resp, next) => {
       let cookie = req.cookies[COOKIE_NAME];
       if (!cookie) {
-        console.debug("You are not logged in ");
+        log.debug("You are not logged in ");
         return redirToGoogle(resp);
       } else {
         try {
-          console.debug("You are logged");
+          log.debug("You are logged");
           let tokens = JSON.parse(cookie) as Auth.Credentials;
           if (new Date(tokens.expiry_date || 0) < new Date()) {
             return redirToGoogle(resp);
@@ -74,13 +76,13 @@ export class GoogleAuth {
               let decode: GoogleJwt = jwt_decode.default(tokens.id_token);
               req.context.userToken = decode;
             } catch (e) {
-              console.error("Could not parse ID token", e);
+              log.error("Could not parse ID token", e);
             }
           }
           req.context.auth = client;
           next();
         } catch (e) {
-          console.error("Could not set credentials" + e);
+          log.error("Could not set credentials" + e);
           return redirToGoogle(resp);
         }
       }
@@ -99,7 +101,7 @@ export class GoogleAuth {
 
   public handleLogOut(): Handler {
     return (req, resp) => {
-      console.log("Logging you out");
+      log.info("Logging you out");
       resp.clearCookie(COOKIE_NAME).send("You are now logged out");
     };
   }
@@ -107,19 +109,19 @@ export class GoogleAuth {
   public handleCallBack(): Handler {
     const client = this.client;
     return async (req, res) => {
-      console.log("Gonna handle auth for ", req.query);
+      log.info("Gonna handle auth for ", req.query);
       if (req.query.error) {
         // The user did not give us permission.
-        console.error(`Received Google error ` + req.query.error);
+        log.error(`Received Google error ` + req.query.error);
         return res.redirect("/");
       } else {
         try {
-          console.log("Getting tokens from google");
+          log.info("Getting tokens from google");
           let { tokens } = await client.getToken(req.query.code as string);
-          console.log("Got tokens. Setting cookie");
+          log.info("Got tokens. Setting cookie");
           let expires = undefined;
           if (tokens.expiry_date) {
-            console.log("Token expires", [
+            log.info("Token expires", [
               tokens.expiry_date,
               new Date(tokens.expiry_date),
               new Date(),
@@ -135,7 +137,7 @@ export class GoogleAuth {
             })
             .redirect("/");
         } catch (err) {
-          console.error("Cannot do a thing" + err);
+          log.error("Cannot do a thing" + err);
           return res.redirect("/");
         }
       }
