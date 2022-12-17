@@ -1,4 +1,3 @@
-import { Duration } from "luxon";
 import React from "react";
 import { Config, TotalFocusResult } from "../focusTime.js";
 import { GroupFocusResult } from "../handlers/focusTime.js";
@@ -28,8 +27,32 @@ export function GroupFocusTimeResults({
     return "/focus-time?" + search.toString();
   };
 
-  let sorted = Object.entries(results).filter((i) => i[1]!.totalWorkTime > 8);
-  sorted.sort((one, other) => one[0].localeCompare(other[0])); // sort by email
+  const sortUrl = (key: "name" | "focus" | "meeting") => {
+    const search = new URLSearchParams(searchParams);
+    search.set("sort", key);
+    return "/focus-time?" + search.toString();
+  };
+
+  const sortButtonActiveClass = (key: "name" | "focus" | "meeting") => {
+    if (searchParams.get("sort") === key) {
+      return "active";
+    }
+    if (!searchParams.get("sort") && key === "name") {
+      return "active";
+    }
+  };
+
+  let sorted = Object.entries(results).filter(
+    (i) => i[1] && i[1].totalWorkTime > 8
+  );
+  sorted.sort((one, other) => {
+    if (searchParams.get("sort") === "focus") {
+      return sortBy("focusTime", one[1], other[1]);
+    } else if (searchParams.get("sort") === "meeting") {
+      return sortBy("inMeeting", one[1], other[1]);
+    }
+    return one[0].localeCompare(other[0]);
+  }); // sort by email
   let totals = getTotals(sorted);
 
   return (
@@ -44,6 +67,7 @@ export function GroupFocusTimeResults({
             {printPercent(totals.focusTime.averagePercent)} of their time on
             average.
           </p>
+
           <table className="table">
             <thead>
               <tr>
@@ -81,6 +105,41 @@ export function GroupFocusTimeResults({
           </table>
         </section>
         <section>
+          <header>
+            <div>
+              <span>Sort by: </span>
+              <div
+                className="btn-group btn-group-sm"
+                role="group"
+                aria-label="Small button group"
+              >
+                <a
+                  href={sortUrl("name")}
+                  className={
+                    "btn btn-outline-dark " + sortButtonActiveClass("name")
+                  }
+                >
+                  Name
+                </a>
+                <a
+                  href={sortUrl("focus")}
+                  className={
+                    "btn btn-outline-dark " + sortButtonActiveClass("focus")
+                  }
+                >
+                  Focus
+                </a>
+                <a
+                  href={sortUrl("meeting")}
+                  className={
+                    "btn btn-outline-dark " + sortButtonActiveClass("meeting")
+                  }
+                >
+                  Meetings
+                </a>
+              </div>
+            </div>
+          </header>
           {sorted.map(([email, result]) => (
             <div key={email} style={{ margin: ".8em 0" }}>
               <a href={userUrl(email)}>{email}</a>
@@ -92,6 +151,18 @@ export function GroupFocusTimeResults({
       </>
     </Body>
   );
+}
+
+function sortBy(
+  key: "inMeeting" | "focusTime",
+  one: TotalFocusResult | null,
+  other: TotalFocusResult | null
+) {
+  if (!one) return -1;
+  if (!other) return 1;
+  let percOne = (one[key] || 0.0001) / (one.totalWorkTime || 0);
+  let percTwo = (other[key] || 0.0001) / (other.totalWorkTime || 0);
+  return percTwo - percOne;
 }
 
 type GroupResult = {

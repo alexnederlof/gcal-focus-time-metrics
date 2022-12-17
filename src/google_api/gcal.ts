@@ -16,6 +16,7 @@ export class SimpleGcal {
 
   constructor(auth: Auth.OAuth2Client) {
     this.gcal = google.calendar({ version: "v3", auth: auth });
+    google._options.retryConfig;
   }
 
   /**

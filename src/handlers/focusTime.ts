@@ -1,15 +1,18 @@
 import { Handler, Request, Response } from "express";
 import log from "loglevel";
+import LRU from "lru-cache";
 import { DateTime } from "luxon";
 import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
 import { GcalError } from "../errors.js";
+import { GoogleJwt } from "../google_api/auth.js";
 import { GoogleAuth, userFromContext } from "../google_api/auth.js";
 import { SimpleGcal } from "../google_api/gcal.js";
 import { SimpleGroups, SimpleMember } from "../google_api/gGroups.js";
 import { FocusTimeResults } from "../layout/FocusTimeResults.js";
 import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
 import {
+  cacheKeyFor,
   Config,
   DEFAULT_CONFIG,
   getFocusTime,
@@ -26,7 +29,6 @@ export function renderFocusTime(gAuth: GoogleAuth): Handler {
         config.email,
         new SimpleGroups(gAuth.client)
       );
-
       if (personal) {
         await renderPersonalFocus(config, personal, cal, req, resp);
       } else {
@@ -53,9 +55,8 @@ async function renderPersonalFocus(
     keepLocalTime: true,
   });
   config.to = config.to.setZone(calendar.timeZone!, { keepLocalTime: true });
-  const events = await cal.listEvents(config.from, config.to, config.email);
-  let results = getFocusTime(events, config);
-  let user = userFromContext(req);
+  let results = await cachedFocusTime(userFromContext(req), config, cal);
+  const user = userFromContext(req);
   resp.send(
     ReactDOMServer.renderToString(
       FocusTimeResults({ results, config: config, user })
@@ -77,16 +78,16 @@ async function renderGroupFocus(
 ) {
   log.info(`Getting events from ${config.from} to ${config.to} for `);
   let limit = pLimit(Number(process.env["GOOGLE_CONCURRENT_REQS"] || "5"));
+  const me = userFromContext(req);
   const groupResult: GroupFocusResult = Object.fromEntries(
     await Promise.all(
       members.map((member) => {
         return limit(async () => {
           log.info(`Getting focus time for ${member.email}`);
           const calendar = await cal.getCalendar(member.email);
-          log.info(`Set zone to ${calendar.timeZone}`);
           let subConfig = {
             ...config,
-            calenderId: member.email,
+            email: member.email,
             from: config.from.setZone(calendar.timeZone!, {
               keepLocalTime: true,
             }),
@@ -95,14 +96,10 @@ async function renderGroupFocus(
             }),
           };
           try {
-            const events = await cal.listEvents(
-              subConfig.from,
-              subConfig.to,
-              subConfig.calenderId
-            );
-            let results = getFocusTime(events, subConfig);
+            let results = await cachedFocusTime(me, subConfig, cal);
             return [member.email, results];
           } catch (e) {
+            console.error(e);
             return [member.email, null];
           }
         });
@@ -123,17 +120,67 @@ async function renderGroupFocus(
   );
 }
 
+const focusCache = new LRU<string, Promise<TotalFocusResult>>({
+  max: 1000,
+  ttl: 3 * 60 * 60 * 1000,
+  allowStale: false,
+});
+setInterval(() => focusCache.purgeStale(), 60_000);
+
+async function cachedFocusTime(
+  user: GoogleJwt,
+  config: Config,
+  cal: SimpleGcal,
+  cache: boolean = true
+): Promise<TotalFocusResult> {
+  let key = `${user.sub}##${cacheKeyFor(config)}`;
+
+  let getter = async () => {
+    try {
+      const events = await cal.listEvents(config.from, config.to, config.email);
+      return getFocusTime(events, config);
+    } catch (e) {
+      focusCache.delete(key);
+      throw e;
+    }
+  };
+  if (!cache) {
+    return getter();
+  }
+  if (!focusCache.has(key)) {
+    focusCache.set(key, getter());
+  }
+  return focusCache.get(key)!;
+}
+
 function getParams(url: string) {
   return new URLSearchParams(url.substring(url.indexOf("?")));
 }
+
+const emailCache = new LRU<string, ReturnType<typeof resolveEmail>>({
+  max: 100,
+  ttl: 24 * 60 * 60 * 1000,
+  allowStale: false,
+});
+setInterval(() => emailCache.purgeStale(), 60_000);
 
 export async function resolveEmail(
   email: string,
   api: SimpleGroups
 ): Promise<{ members?: SimpleMember[]; personal?: string }> {
-  let members = await api.getMembersFor(email);
-  if (members) return { members };
-  else return { personal: email };
+  if (!emailCache.has(email)) {
+    log.info("Cache miss on email " + email);
+    let fetcher = async () => {
+      let members = await api.getMembersFor(email);
+      if (members) {
+        return { members };
+      } else {
+        return { personal: email };
+      }
+    };
+    emailCache.set(email, fetcher());
+  }
+  return emailCache.get(email)!;
 }
 
 function parseConfig(
@@ -193,5 +240,18 @@ function parseConfig(
     from,
     to,
     ...config,
+  };
+}
+
+export async function cacheStats() {
+  return {
+    focusCache: {
+      size: focusCache.size,
+      maxSize: focusCache.maxSize,
+    },
+    emailCache: {
+      size: emailCache.size,
+      maxSize: emailCache.maxSize,
+    },
   };
 }

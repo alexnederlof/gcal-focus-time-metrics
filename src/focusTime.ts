@@ -2,6 +2,7 @@ import { calendar_v3 } from "googleapis";
 import log from "loglevel";
 import { DateTime } from "luxon";
 import { WrappedEvent } from "./WrappedEvents.js";
+
 export type Config = {
   email: string;
   startOfDay: number;
@@ -11,6 +12,18 @@ export type Config = {
   from: DateTime;
   to: DateTime;
 };
+
+export function cacheKeyFor(config: Config) {
+  return [
+    config.email,
+    config.startOfDay,
+    config.endOfDay,
+    config.focusContextSwitchMinutes,
+    config.focusContextSwitchMinutes,
+    config.from.toISODate(),
+    config.to.toISODate(),
+  ].join("##");
+}
 
 export const DEFAULT_CONFIG: Omit<Config, "from" | "to" | "email"> = {
   startOfDay: 10,

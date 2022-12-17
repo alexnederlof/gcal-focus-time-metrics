@@ -6,12 +6,13 @@ import log, { LogLevelDesc } from "loglevel";
 import ReactDOMServer from "react-dom/server";
 import { ErrorHandler } from "./errors.js";
 import { GoogleAuth, userFromContext } from "./google_api/auth.js";
+import { initGoogle } from "./google_api/google.js";
 import { renderFocusTime } from "./handlers/focusTime.js";
 import { Welcome } from "./layout/Welcome.js";
 
 async function server() {
   checkConfig();
-
+  initGoogle();
   const app = express();
   app.use(cookies());
   app.use(expressContext.default());
@@ -55,7 +56,7 @@ function checkConfig() {
   if (!process.env["GOOGLE_CUSTOMER_ID"]?.startsWith("C")) {
     throw Error("Please configure your GOOGLE_CUSTOMER_ID");
   }
-  log.setLevel((process.env["LOG_LEVEL"] || "debug") as LogLevelDesc);
+  log.setLevel((process.env["LOG_LEVEL"] || "info") as LogLevelDesc);
 }
 
 server().catch((e) => {
