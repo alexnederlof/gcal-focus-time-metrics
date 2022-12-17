@@ -3,7 +3,7 @@ import React from "react";
 import { Config, TotalFocusResult } from "../focusTime.js";
 import { GroupFocusResult } from "../handlers/focusTime.js";
 import { Body } from "./Body.js";
-import { DayView } from "./DayView.js";
+import { printHours, printPercent } from "./formatters.js";
 import { NavProps } from "./Nav.js";
 import { ProgressBar } from "./ProgressBar.js";
 
@@ -12,17 +12,21 @@ export function GroupFocusTimeResults({
   config,
   user,
   groupName,
+  searchParams,
 }: {
   results: GroupFocusResult;
   config: Config;
   user: NavProps["user"];
   groupName: string;
+  searchParams: URLSearchParams;
 }) {
   // let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
-  const hr = (minutes: number) =>
-    Duration.fromObject({ minutes })
-      .rescale()
-      .toHuman({ unitDisplay: "short" });
+
+  const userUrl = (email: string) => {
+    const search = new URLSearchParams(searchParams);
+    search.set("email", email);
+    return "/focus-time?" + search.toString();
+  };
 
   let sorted = Object.entries(results);
   sorted.sort((one, other) => one[0].localeCompare(other[0])); // sort by email
@@ -35,9 +39,9 @@ export function GroupFocusTimeResults({
           <h1>Here's the focus time for {groupName}</h1>
           <p>
             From {config.from.toLocaleString()} to {config.to.toLocaleString()}{" "}
-            for {config.calenderId} this group had {hr(totals.focusTime.net)} of
-            focus time.
-            {/* TODO make this in hours */}
+            for {config.email} this group had {printHours(totals.focusTime.net)}{" "}
+            of total focus time. That's{" "}
+            {printPercent(totals.focusTime.averagePercent)} of their time.
           </p>
           <table className="table">
             <thead>
@@ -50,33 +54,36 @@ export function GroupFocusTimeResults({
             <tbody>
               <tr>
                 <th>Focus time</th>
-                <td>{hr(totals.focusTime.averagePercent)}</td>
-                <td>{hr(totals.focusTime.medianPercent || 0)}</td>
+                <td>{printPercent(totals.focusTime.averagePercent)}</td>
+                <td>{printPercent(totals.focusTime.medianPercent || 0)}</td>
               </tr>
               <tr>
                 <th>In meetings</th>
-                <td>{hr(totals.inMeeting.averagePercent)}</td>
-                <td>{hr(totals.inMeeting.medianPercent || 0)}</td>
+                <td>{printPercent(totals.inMeeting.averagePercent)}</td>
+                <td>{printPercent(totals.inMeeting.medianPercent || 0)}</td>
               </tr>
               <tr>
                 <th>In one-on-ones</th>
-                <td>{hr(totals.inOneOnOne.averagePercent)}</td>
-                <td>{hr(totals.inOneOnOne.medianPercent || 0)}</td>
+                <td>{printPercent(totals.inOneOnOne.averagePercent)}</td>
+                <td>{printPercent(totals.inOneOnOne.medianPercent || 0)}</td>
               </tr>
               <tr>
                 <th>In Recurring meetings</th>
-                <td>{hr(totals.inRecurringMeeting.averagePercent)}</td>
-                <td>{hr(totals.inRecurringMeeting.medianPercent || 0)}</td>
+                <td>
+                  {printPercent(totals.inRecurringMeeting.averagePercent)}
+                </td>
+                <td>
+                  {printPercent(totals.inRecurringMeeting.medianPercent || 0)}
+                </td>
               </tr>
             </tbody>
           </table>
         </section>
         <section>
           {sorted.map(([email, result]) => (
-            <div key={email}>
-              <p>{email}</p>
+            <div key={email} style={{ margin: ".8em 0" }}>
+              <a href={userUrl(email)}>{email}</a>
               {result && <ProgressBar stats={result} />}
-              {/* TODO add inspect link */}
               {result == null && <>Could not be resolved</>}
             </div>
           ))}

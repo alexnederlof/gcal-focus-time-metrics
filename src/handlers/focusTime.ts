@@ -46,12 +46,8 @@ async function renderPersonalFocus(
   resp: Response
 ) {
   log.info(`Getting events from ${config.from} to ${config.to} for `);
-  config.calenderId = personal;
-  const events = await cal.listEvents(
-    config.from,
-    config.to,
-    config.calenderId
-  );
+  config.email = personal;
+  const events = await cal.listEvents(config.from, config.to, config.email);
   let results = getFocusTime(events, config);
   let user = userFromContext(req);
   resp.send(
@@ -78,9 +74,15 @@ async function renderGroupFocus(
   const groupResult: GroupFocusResult = Object.fromEntries(
     await Promise.all(
       members.map((member) => {
-        let subConfig = { ...config, calenderId: member.email };
         return limit(async () => {
           log.info(`Getting focus time for ${member.email}`);
+          const calendar = await cal.getCalendar(member.email);
+          let subConfig = {
+            ...config,
+            calenderId: member.email,
+            // from: config.from.setZone(calendar.timeZone!),
+            // to: config.from.setZone(calendar.timeZone!),
+          };
           try {
             const events = await cal.listEvents(
               subConfig.from,
@@ -104,9 +106,14 @@ async function renderGroupFocus(
         config: config,
         user,
         groupName,
+        searchParams: getParams(req.originalUrl),
       })
     )
   );
+}
+
+function getParams(url: string) {
+  return new URLSearchParams(url.substring(url.indexOf("?")));
 }
 
 export async function resolveEmail(

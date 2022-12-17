@@ -61,6 +61,12 @@ export class SimpleGcal {
     return setting.value || undefined;
   }
 
+  public async getCalendar(email: string) {
+    log.info("Getting cal id " + email);
+    const { data } = await this.gcal.calendars.get({ calendarId: email });
+    return data;
+  }
+
   public async getCalendars(): Promise<SimpleCalendar[]> {
     let results: SimpleCalendar[] = [];
     let pageToken = undefined;

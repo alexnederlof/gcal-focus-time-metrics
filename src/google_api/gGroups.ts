@@ -62,7 +62,7 @@ export class SimpleGroups {
           })
         );
     } while (pageToken);
-    members.forEach((m) => log.info(m.memberName));
+
     return members;
   }
 

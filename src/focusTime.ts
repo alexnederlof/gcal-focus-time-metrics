@@ -3,7 +3,7 @@ import log from "loglevel";
 import { DateTime } from "luxon";
 import { WrappedEvent } from "./WrappedEvents.js";
 export type Config = {
-  calenderId?: string;
+  email: string;
   startOfDay: number;
   endOfDay: number;
   focusThresholdMinutes: number;
@@ -12,7 +12,7 @@ export type Config = {
   to: DateTime;
 };
 
-export const DEFAULT_CONFIG: Omit<Config, "from" | "to"> = {
+export const DEFAULT_CONFIG: Omit<Config, "from" | "to" | "email"> = {
   startOfDay: 10,
   endOfDay: 19,
   focusThresholdMinutes: 120,
