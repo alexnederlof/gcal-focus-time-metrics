@@ -34,7 +34,7 @@ export class GoogleAuth {
 
   static async create() {
     let credentialsFile =
-      process.env["GOOGLE_CREDENTIALS"] || "secrets/credentials.server.json";
+      process.env["GOOGLE_CREDENTIALS"] || "secrets/credentials.json";
     log.info("Loading credentials from " + credentialsFile);
     try {
       let asText = await fs.readFile(credentialsFile, "utf-8");

@@ -51,9 +51,6 @@ export function getFocusTime(
   rawEvents: calendar_v3.Schema$Event[],
   config: Config
 ): TotalFocusResult {
-  // if (from.weekday !== 1) {
-  //   throw `I need to start on a monday, not ${from.weekdayLong}`;
-  // }
   const events = getRelevantEvents(rawEvents);
 
   let perDay: PerDayFocusResult[] = [];
