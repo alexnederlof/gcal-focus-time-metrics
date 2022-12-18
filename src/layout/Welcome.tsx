@@ -1,11 +1,19 @@
 import { DateTime } from "luxon";
 import React from "react";
-import { Body } from "./Body.js";
+import { Body, Props as BodyProps } from "./Body.js";
 import { NavProps } from "./Nav.js";
 
-export function Welcome(props: { user: NavProps["user"]; userEmail: string }) {
+export function Welcome(props: {
+  user: NavProps["user"];
+  userEmail: string;
+  security: BodyProps["security"];
+}) {
   return (
-    <Body title="Welcome to calendar" user={props.user}>
+    <Body
+      title="Welcome to calendar"
+      user={props.user}
+      security={props.security}
+    >
       <>
         <h1>Hey there</h1>
         <p>Let's analyze that focus time</p>

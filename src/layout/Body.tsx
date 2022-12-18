@@ -6,9 +6,10 @@ export interface Props {
   children: JSX.Element[] | JSX.Element;
   title?: string;
   user: NavProps["user"];
+  security: { nonce: string };
 }
 
-export function Body({ children, title, user }: Props) {
+export function Body({ children, title, user, security }: Props) {
   return (
     <html lang="en">
       <head>
@@ -31,7 +32,7 @@ export function Body({ children, title, user }: Props) {
       <body style={{ paddingTop: 56 }}>
         <Nav user={user} />
         <div className="container">{children}</div>
-        <EnableToolTips />
+        <EnableToolTips nonce={security.nonce} />
       </body>
     </html>
   );

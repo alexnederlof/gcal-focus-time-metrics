@@ -1,18 +1,19 @@
-import { Handler, Request, Response } from "express";
-import log from "loglevel";
-import LRU from "lru-cache";
-import { DateTime } from "luxon";
-import pLimit from "p-limit";
-import ReactDOMServer from "react-dom/server";
-import { cacheHit, cacheMiss } from "../cacheUtil.js";
-import { instrument } from "../cacheUtil.js";
-import { GcalError } from "../errors.js";
-import { GoogleJwt } from "../google_api/auth.js";
-import { GoogleAuth, userFromContext } from "../google_api/auth.js";
-import { SimpleGcal } from "../google_api/gcal.js";
-import { SimpleGroups, SimpleMember } from "../google_api/gGroups.js";
-import { FocusTimeResults } from "../layout/FocusTimeResults.js";
-import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
+import { Handler, Request, Response } from 'express';
+import log from 'loglevel';
+import LRU from 'lru-cache';
+import { DateTime } from 'luxon';
+import pLimit from 'p-limit';
+import ReactDOMServer from 'react-dom/server';
+import { cacheHit, cacheMiss } from '../cacheUtil.js';
+import { instrument } from '../cacheUtil.js';
+import { GcalError } from '../errors.js';
+import { GoogleJwt } from '../google_api/auth.js';
+import { GoogleAuth, userFromContext } from '../google_api/auth.js';
+import { SimpleGcal } from '../google_api/gcal.js';
+import { SimpleGroups, SimpleMember } from '../google_api/gGroups.js';
+import { FocusTimeResults } from '../layout/FocusTimeResults.js';
+import { GroupFocusTimeResults } from '../layout/GroupFocusTimeResults.js';
+import { getNonceFromResp } from '../util/security.js';
 
 import {
   cacheKeyFor,
@@ -62,7 +63,14 @@ async function renderPersonalFocus(
   const user = userFromContext(req);
   resp.send(
     ReactDOMServer.renderToString(
-      FocusTimeResults({ results, config: config, user })
+      FocusTimeResults({
+        results,
+        config: config,
+        user,
+        security: {
+          nonce: getNonceFromResp(resp),
+        },
+      })
     )
   );
 }
@@ -118,6 +126,9 @@ async function renderGroupFocus(
         user,
         groupName,
         searchParams: getParams(req.originalUrl),
+        security: {
+          nonce: getNonceFromResp(resp),
+        },
       })
     )
   );
