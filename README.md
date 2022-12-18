@@ -26,10 +26,16 @@ Then you can
 ```
 docker run -p 3000:3000 \
     -v $PWD/secrets/credentials.json:/secrets/credentials.json \
-    -e GOOGLE_CREDENTIALS=/secrets/credentials.json
-    -e GOOGLE_CUSTOMER_ID=C123
+    -e GOOGLE_CREDENTIALS=/secrets/credentials.json \
+    -e GOOGLE_CUSTOMER_ID=C123 \
     ghcr.io/alexnederlof/gcal-focus-time-metrics
 ```
+
+You can now access:
+
+- The main interface at [http://localhost:3000]()
+- the health check at [http://localhost:3000/\_health]()
+- the metrics at [http://localhost:3000/metrics]()
 
 ## Staring in develop mode
 

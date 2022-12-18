@@ -18,6 +18,7 @@ USER 1000
 EXPOSE 3000
 WORKDIR /app/
 
+COPY package.json /app/
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/build/ /app/
 
