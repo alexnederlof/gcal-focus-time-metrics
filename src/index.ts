@@ -1,19 +1,21 @@
 import cookies from "cookie-parser";
 import { config } from "dotenv";
 import express from "express";
+import promBundle from "express-prom-bundle";
 import expressContext from "express-request-context";
 import log, { LogLevelDesc } from "loglevel";
+import prometheus from "prom-client";
 import ReactDOMServer from "react-dom/server";
 import { ErrorHandler } from "./errors.js";
 import { GoogleAuth, userFromContext } from "./google_api/auth.js";
 import { initGoogle } from "./google_api/google.js";
 import { renderFocusTime } from "./handlers/focusTime.js";
 import { Welcome } from "./layout/Welcome.js";
-
 async function server() {
   checkConfig();
   initGoogle();
   const app = express();
+  app.use(setupMetrics());
   app.use(cookies());
   app.use(expressContext.default());
   let gAuth = await GoogleAuth.create();
@@ -49,6 +51,15 @@ async function server() {
   process.on("SIGINT", server.close);
   process.on("SIGTERM", server.close);
   process.on("SIGHUP", server.close);
+}
+
+function setupMetrics() {
+  prometheus.collectDefaultMetrics();
+  const metricsMiddleware = promBundle({
+    includeMethod: true,
+    includePath: true,
+  });
+  return metricsMiddleware;
 }
 
 function checkConfig() {
