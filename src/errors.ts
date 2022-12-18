@@ -5,6 +5,7 @@ import ReactDOMServer from "react-dom/server";
 import { logOutRequest, userFromContext } from "./google_api/auth.js";
 import { ErrorView } from "./layout/ErrorView.js";
 import { getNonceFromResp } from "./util/security.js";
+
 export class GcalError extends Error {
   constructor(
     public status: number,

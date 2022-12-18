@@ -1,19 +1,19 @@
-import { Handler, Request, Response } from 'express';
-import log from 'loglevel';
-import LRU from 'lru-cache';
-import { DateTime } from 'luxon';
-import pLimit from 'p-limit';
-import ReactDOMServer from 'react-dom/server';
-import { cacheHit, cacheMiss } from '../cacheUtil.js';
-import { instrument } from '../cacheUtil.js';
-import { GcalError } from '../errors.js';
-import { GoogleJwt } from '../google_api/auth.js';
-import { GoogleAuth, userFromContext } from '../google_api/auth.js';
-import { SimpleGcal } from '../google_api/gcal.js';
-import { SimpleGroups, SimpleMember } from '../google_api/gGroups.js';
-import { FocusTimeResults } from '../layout/FocusTimeResults.js';
-import { GroupFocusTimeResults } from '../layout/GroupFocusTimeResults.js';
-import { getNonceFromResp } from '../util/security.js';
+import { Handler, Request, Response } from "express";
+import log from "loglevel";
+import LRU from "lru-cache";
+import { DateTime } from "luxon";
+import pLimit from "p-limit";
+import ReactDOMServer from "react-dom/server";
+import { cacheHit, cacheMiss } from "../cacheUtil.js";
+import { instrument } from "../cacheUtil.js";
+import { GcalError } from "../errors.js";
+import { GoogleJwt } from "../google_api/auth.js";
+import { GoogleAuth, userFromContext } from "../google_api/auth.js";
+import { SimpleGcal } from "../google_api/gcal.js";
+import { SimpleGroups, SimpleMember } from "../google_api/gGroups.js";
+import { FocusTimeResults } from "../layout/FocusTimeResults.js";
+import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
+import { getNonceFromResp } from "../util/security.js";
 
 import {
   cacheKeyFor,
@@ -29,6 +29,8 @@ export function renderFocusTime(gAuth: GoogleAuth): Handler {
       let cal = new SimpleGcal(gAuth.client);
       const tz = await cal.getTz();
       let config = parseConfig(req.query, tz!);
+
+      // See it's a group email or a personal one
       let { members, personal } = await resolveEmail(
         config.email,
         new SimpleGroups(gAuth.client)
@@ -79,6 +81,8 @@ export interface GroupFocusResult {
   [key: string]: TotalFocusResult | null;
 }
 
+let limit = pLimit(Number(process.env["GOOGLE_CONCURRENT_REQS"] || "5"));
+
 async function renderGroupFocus(
   config: Config,
   groupName: string,
@@ -88,7 +92,6 @@ async function renderGroupFocus(
   resp: Response
 ) {
   log.info(`Getting events from ${config.from} to ${config.to} for `);
-  let limit = pLimit(Number(process.env["GOOGLE_CONCURRENT_REQS"] || "5"));
   const me = userFromContext(req);
   const groupResult: GroupFocusResult = Object.fromEntries(
     await Promise.all(
