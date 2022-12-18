@@ -1,6 +1,7 @@
 import { GaxiosError, GaxiosResponse } from "gaxios";
 import { Auth, cloudidentity_v1, google } from "googleapis";
 import log from "loglevel";
+
 export type SimpleGroup = Pick<
   cloudidentity_v1.Schema$Group,
   "name" | "parent" | "description" | "displayName" | "labels"
@@ -19,7 +20,10 @@ export class SimpleGroups {
   private ident: cloudidentity_v1.Cloudidentity;
 
   constructor(auth: Auth.OAuth2Client) {
-    this.ident = google.cloudidentity({ version: "v1", auth });
+    this.ident = google.cloudidentity({
+      version: "v1",
+      auth,
+    });
     if (!cachedGroups) {
       cachedGroups = this.getAllGroups();
     }

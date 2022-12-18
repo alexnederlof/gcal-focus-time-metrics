@@ -4,6 +4,8 @@ import LRU from "lru-cache";
 import { DateTime } from "luxon";
 import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
+import { cacheHit, cacheMiss } from "../cacheUtil.js";
+import { instrument } from "../cacheUtil.js";
 import { GcalError } from "../errors.js";
 import { GoogleJwt } from "../google_api/auth.js";
 import { GoogleAuth, userFromContext } from "../google_api/auth.js";
@@ -11,6 +13,7 @@ import { SimpleGcal } from "../google_api/gcal.js";
 import { SimpleGroups, SimpleMember } from "../google_api/gGroups.js";
 import { FocusTimeResults } from "../layout/FocusTimeResults.js";
 import { GroupFocusTimeResults } from "../layout/GroupFocusTimeResults.js";
+
 import {
   cacheKeyFor,
   Config,
@@ -84,22 +87,22 @@ async function renderGroupFocus(
       members.map((member) => {
         return limit(async () => {
           log.info(`Getting focus time for ${member.email}`);
-          const calendar = await cal.getCalendar(member.email);
-          let subConfig = {
-            ...config,
-            email: member.email,
-            from: config.from.setZone(calendar.timeZone!, {
-              keepLocalTime: true,
-            }),
-            to: config.to.setZone(calendar.timeZone!, {
-              keepLocalTime: true,
-            }),
-          };
           try {
+            const calendar = await cal.getCalendar(member.email);
+            let subConfig = {
+              ...config,
+              email: member.email,
+              from: config.from.setZone(calendar.timeZone!, {
+                keepLocalTime: true,
+              }),
+              to: config.to.setZone(calendar.timeZone!, {
+                keepLocalTime: true,
+              }),
+            };
             let results = await cachedFocusTime(me, subConfig, cal);
             return [member.email, results];
           } catch (e) {
-            console.error(e);
+            console.error(`Could not get focus time for ${member.email}`, e);
             return [member.email, null];
           }
         });
@@ -126,6 +129,7 @@ const focusCache = new LRU<string, Promise<TotalFocusResult>>({
   allowStale: false,
 });
 setInterval(() => focusCache.purgeStale(), 60_000);
+instrument(focusCache, "focus");
 
 async function cachedFocusTime(
   user: GoogleJwt,
@@ -148,7 +152,10 @@ async function cachedFocusTime(
     return getter();
   }
   if (!focusCache.has(key)) {
+    cacheMiss("focus");
     focusCache.set(key, getter());
+  } else {
+    cacheHit("focus");
   }
   return focusCache.get(key)!;
 }
@@ -163,13 +170,14 @@ const emailCache = new LRU<string, ReturnType<typeof resolveEmail>>({
   allowStale: false,
 });
 setInterval(() => emailCache.purgeStale(), 60_000);
+instrument(emailCache, "email");
 
 export async function resolveEmail(
   email: string,
   api: SimpleGroups
 ): Promise<{ members?: SimpleMember[]; personal?: string }> {
   if (!emailCache.has(email)) {
-    log.info("Cache miss on email " + email);
+    cacheMiss("email");
     let fetcher = async () => {
       let members = await api.getMembersFor(email);
       if (members) {
@@ -179,6 +187,8 @@ export async function resolveEmail(
       }
     };
     emailCache.set(email, fetcher());
+  } else {
+    cacheHit("email");
   }
   return emailCache.get(email)!;
 }
@@ -240,18 +250,5 @@ function parseConfig(
     from,
     to,
     ...config,
-  };
-}
-
-export async function cacheStats() {
-  return {
-    focusCache: {
-      size: focusCache.size,
-      maxSize: focusCache.maxSize,
-    },
-    emailCache: {
-      size: emailCache.size,
-      maxSize: emailCache.maxSize,
-    },
   };
 }
