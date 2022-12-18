@@ -15,8 +15,10 @@ export class SimpleGcal {
   private readonly gcal: calendar_v3.Calendar;
 
   constructor(auth: Auth.OAuth2Client) {
-    this.gcal = google.calendar({ version: "v3", auth: auth });
-    google._options.retryConfig;
+    this.gcal = google.calendar({
+      version: "v3",
+      auth: auth,
+    });
   }
 
   /**

@@ -87,22 +87,22 @@ async function renderGroupFocus(
       members.map((member) => {
         return limit(async () => {
           log.info(`Getting focus time for ${member.email}`);
-          const calendar = await cal.getCalendar(member.email);
-          let subConfig = {
-            ...config,
-            email: member.email,
-            from: config.from.setZone(calendar.timeZone!, {
-              keepLocalTime: true,
-            }),
-            to: config.to.setZone(calendar.timeZone!, {
-              keepLocalTime: true,
-            }),
-          };
           try {
+            const calendar = await cal.getCalendar(member.email);
+            let subConfig = {
+              ...config,
+              email: member.email,
+              from: config.from.setZone(calendar.timeZone!, {
+                keepLocalTime: true,
+              }),
+              to: config.to.setZone(calendar.timeZone!, {
+                keepLocalTime: true,
+              }),
+            };
             let results = await cachedFocusTime(me, subConfig, cal);
             return [member.email, results];
           } catch (e) {
-            console.error(e);
+            console.error(`Could not get focus time for ${member.email}`, e);
             return [member.email, null];
           }
         });
