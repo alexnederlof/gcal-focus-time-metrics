@@ -1,7 +1,7 @@
 import React from "react";
 import { Config, TotalFocusResult } from "../focusTime.js";
 import { GroupFocusResult } from "../handlers/focusTime.js";
-import { Body } from "./Body.js";
+import { Body, Props as BodyProps } from "./Body.js";
 import { printHours, printPercent } from "./formatters.js";
 import { NavProps } from "./Nav.js";
 import { ProgressBar } from "./ProgressBar.js";
@@ -12,12 +12,14 @@ export function GroupFocusTimeResults({
   user,
   groupName,
   searchParams,
+  security,
 }: {
   results: GroupFocusResult;
   config: Config;
   user: NavProps["user"];
   groupName: string;
   searchParams: URLSearchParams;
+  security: BodyProps["security"];
 }) {
   // let format = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
   let groupNameShort = groupName.substring(0, groupName.indexOf("@"));
@@ -56,7 +58,11 @@ export function GroupFocusTimeResults({
   let totals = getTotals(sorted);
 
   return (
-    <Body title={`Result for group ${groupNameShort}`} user={user}>
+    <Body
+      title={`Result for group ${groupNameShort}`}
+      user={user}
+      security={security}
+    >
       <>
         <section>
           <h1>Here's the focus time for {groupNameShort}</h1>

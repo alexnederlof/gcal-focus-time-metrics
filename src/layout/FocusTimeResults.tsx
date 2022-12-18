@@ -1,23 +1,25 @@
 import React from "react";
 import { Config, TotalFocusResult } from "../focusTime.js";
-import { Body } from "./Body.js";
 import { DayView } from "./DayView.js";
 import { printHours } from "./formatters.js";
 import { NavProps } from "./Nav.js";
 import { ProgressBar } from "./ProgressBar.js";
+import { Body, Props as BodyProps } from "./Body.js";
 
 export function FocusTimeResults({
   results,
   config,
   user,
+  security,
 }: {
   results: TotalFocusResult;
   config: Config;
   user: NavProps["user"];
+  security: BodyProps["security"];
 }) {
   const shortName = config.email.substring(0, config.email.indexOf("@"));
   return (
-    <Body title={`Focus of ${shortName}`} user={user}>
+    <Body title={`Focus of ${shortName}`} user={user} security={security}>
       <>
         <section>
           <h1>Focus time of {shortName}</h1>
