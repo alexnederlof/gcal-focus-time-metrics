@@ -41,7 +41,7 @@
     "helmet": "^6.0.1",
     "jwt-decode": "^3.1.2",
     "loglevel": "^1.8.1",
-    "lru-cache": "^7.16.0",
+    "lru-cache": "^7.16.1",
     "luxon": "^3.2.1",
     "p-limit": "^4.0.0",
     "prom-client": "^14.1.1",
