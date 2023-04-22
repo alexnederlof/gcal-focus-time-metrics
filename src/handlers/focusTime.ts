@@ -1,6 +1,6 @@
 import { Handler, Request, Response } from "express";
 import log from "loglevel";
-import LRU from "lru-cache";
+import { LRUCache } from "lru-cache";
 import { DateTime } from "luxon";
 import pLimit from "p-limit";
 import ReactDOMServer from "react-dom/server";
@@ -137,7 +137,7 @@ async function renderGroupFocus(
   );
 }
 
-const focusCache = new LRU<string, Promise<TotalFocusResult>>({
+const focusCache = new LRUCache<string, Promise<TotalFocusResult>>({
   max: 1000,
   ttl: 3 * 60 * 60 * 1000,
   allowStale: false,
@@ -178,7 +178,7 @@ function getParams(url: string) {
   return new URLSearchParams(url.substring(url.indexOf("?")));
 }
 
-const emailCache = new LRU<string, ReturnType<typeof resolveEmail>>({
+const emailCache = new LRUCache<string, ReturnType<typeof resolveEmail>>({
   max: 100,
   ttl: 24 * 60 * 60 * 1000,
   allowStale: false,

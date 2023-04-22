@@ -72,8 +72,8 @@ function OneDay(
       <td>
         {events.map(({ title, start, finish, original, focusMinutes }, i) => (
           <span key={i}>
-            {start.setZone(day.date.zoneName).toFormat("HH:mm")} -{" "}
-            {finish.setZone(day.date.zoneName).toFormat("HH:mm")}:{" "}
+            {start.setZone(day.date.zoneName || undefined).toFormat("HH:mm")} -{" "}
+            {finish.setZone(day.date.zoneName || undefined).toFormat("HH:mm")}:{" "}
             {focusMinutes ? (
               <span className="badge text-bg-success">
                 {hr(focusMinutes)} of focus

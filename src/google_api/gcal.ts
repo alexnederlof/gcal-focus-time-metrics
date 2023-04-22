@@ -36,8 +36,8 @@ export class SimpleGcal {
       const resp: GaxiosResponse<calendar_v3.Schema$Events> =
         await this.gcal.events.list({
           calendarId,
-          timeMin: from.toISO(),
-          timeMax: to.toISO(),
+          timeMin: from.toISO() || undefined,
+          timeMax: to.toISO() || undefined,
           maxResults: 50,
           singleEvents: true,
           orderBy: "startTime",

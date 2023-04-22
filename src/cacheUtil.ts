@@ -1,4 +1,4 @@
-import LRUCache from "lru-cache";
+import { LRUCache } from "lru-cache";
 import prom from "prom-client";
 
 const caches = new Map<string, LRUCache<any, any>>();
