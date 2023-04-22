@@ -7,7 +7,7 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "outDir": "build",
-    "lib": ["es2022", "DOM"],
+    "lib": ["es2023", "DOM"],
     "jsx": "react"
   },
   "include": ["src"]
