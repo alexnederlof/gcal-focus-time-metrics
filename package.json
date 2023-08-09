@@ -42,7 +42,7 @@
     "jwt-decode": "^3.1.2",
     "loglevel": "^1.8.1",
     "lru-cache": "^10.0.0",
-    "luxon": "^3.3.0",
+    "luxon": "^3.4.0",
     "p-limit": "^4.0.0",
     "prom-client": "^14.2.0",
     "react": "^18.2.0",
