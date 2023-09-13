@@ -18,7 +18,7 @@
     "watch": "tsnodemon -x 'node build/index.js'"
   },
   "devDependencies": {
-    "@tsconfig/node18": "^18.2.1",
+    "@tsconfig/node18": "^18.2.2",
     "@types/cookie-parser": "^1.4.4",
     "@types/express": "^4.17.17",
     "@types/luxon": "^3.3.2",
