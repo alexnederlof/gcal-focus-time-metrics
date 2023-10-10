@@ -44,7 +44,7 @@
     "lru-cache": "^10.0.1",
     "luxon": "^3.4.3",
     "p-limit": "^4.0.0",
-    "prom-client": "^14.2.0",
+    "prom-client": "^15.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tsnodemon": "^1.2.2"
