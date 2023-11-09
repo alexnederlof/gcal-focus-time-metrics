@@ -37,7 +37,7 @@
     "express-prom-bundle": "^6.6.0",
     "express-request-context": "^1.0.1",
     "google-auth-library": "^9.2.0",
-    "googleapis": "121.0.0",
+    "googleapis": "128.0.0",
     "helmet": "^7.1.0",
     "jwt-decode": "^3.1.2",
     "loglevel": "^1.8.1",
